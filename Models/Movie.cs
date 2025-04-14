@@ -10,7 +10,6 @@ namespace CineVerify.Models
 
         public int TmdbId { get; set; }
 
-        // Proprietà mancante
         public string ImdbId { get; set; } = string.Empty;
 
         [Required]
@@ -25,10 +24,9 @@ namespace CineVerify.Models
 
         public DateTime? ReleaseDate { get; set; }
 
-        // Proprietà mancante
         public DateTime DateAdded { get; set; } = DateTime.UtcNow;
 
-        [Column(TypeName = "decimal(3,1)")]
+        // Nota: non usiamo Column(TypeName="decimal(3,1)") in quanto SQLite lo supporta in modo diverso
         public decimal Rating { get; set; }
 
         public int VoteCount { get; set; }
@@ -45,7 +43,7 @@ namespace CineVerify.Models
 
         public string GeminiAnalysis { get; set; } = string.Empty;
 
-        // Proprietà di supporto
+        // Proprietà di supporto per verificare se le immagini sono disponibili
         [NotMapped]
         public bool HasPoster => !string.IsNullOrEmpty(PosterPath);
 

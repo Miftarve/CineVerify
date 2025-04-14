@@ -27,7 +27,7 @@ void ConfigureServices(WebApplicationBuilder builder)
     // Connessione al database
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
     builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(connectionString));
+        options.UseSqlite(connectionString)); // Modificato da UseSqlServer a UseSqlite
 
     // Filtro per eccezioni del database
     builder.Services.AddDatabaseDeveloperPageExceptionFilter();

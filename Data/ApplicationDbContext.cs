@@ -48,10 +48,11 @@ namespace CineVerify.Data
                 .HasConversion(jsonConverter)
                 .Metadata.SetValueComparer(valueComparer);
 
-            // Configura la precisione dei campi decimali
-            modelBuilder.Entity<Movie>().Property(m => m.Rating).HasColumnType("decimal(3,1)");
-            modelBuilder.Entity<MovieReview>().Property(r => r.Rating).HasColumnType("decimal(3,1)");
-            modelBuilder.Entity<MovieUserRating>().Property(r => r.Rating).HasColumnType("decimal(3,1)");
+            // Configura i tipi di colonne per SQLite
+            // SQLite usa REAL per i numeri a virgola mobile
+            modelBuilder.Entity<Movie>().Property(m => m.Rating).HasColumnType("REAL");
+            modelBuilder.Entity<MovieReview>().Property(r => r.Rating).HasColumnType("REAL");
+            modelBuilder.Entity<MovieUserRating>().Property(r => r.Rating).HasColumnType("REAL");
 
             // Configura la relazione tra MovieReview e ApplicationUser
             modelBuilder.Entity<MovieReview>()
@@ -59,6 +60,39 @@ namespace CineVerify.Data
                 .WithMany(u => u.Reviews)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configura chiavi composte per le tabelle di relazione
+            modelBuilder.Entity<MovieUserRating>()
+                .HasKey(r => new { r.UserId, r.MovieId });
+
+            modelBuilder.Entity<UserFavorite>()
+                .HasKey(f => new { f.UserId, f.MovieId });
+
+            modelBuilder.Entity<MovieWatchHistory>()
+                .HasKey(h => new { h.UserId, h.MovieId });
+
+            // Configura le relazioni esplicite per le tabelle Movie
+            modelBuilder.Entity<Movie>()
+                .HasMany<MovieReview>()
+                .WithOne()
+                .HasForeignKey(r => r.MovieId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configura la gestione DATE per SQLite
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                var dateTimeProperties = entityType.ClrType.GetProperties()
+                    .Where(p => p.PropertyType == typeof(DateTime) || p.PropertyType == typeof(DateTime?));
+
+                foreach (var property in dateTimeProperties)
+                {
+                    // Configura il tipo di colonna TEXT per i DateTime in SQLite
+                    modelBuilder
+                        .Entity(entityType.Name)
+                        .Property(property.Name)
+                        .HasColumnType("TEXT");
+                }
+            }
         }
 
         // Metodo helper per serializzare in modo sicuro un array di stringhe
