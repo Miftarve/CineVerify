@@ -1,0 +1,219 @@
+﻿@page
+@model CineVerify.Pages.Movies.FavoritesModel
+@{
+    ViewData["Title"] = "I Miei Preferiti";
+}
+
+<div class="favorites-header">
+    <h1><i class="bi bi-heart-fill text-danger me-2"></i>I Miei Film Preferiti</h1>
+    <p class="lead">Qui trovi tutti i film che hai salvato come preferiti.</p>
+</div>
+
+@if (Model.Favorites.Any())
+{
+    <div class="row row-cols-1 row-cols-md-5 g-4 mb-4">
+        @foreach (var favorite in Model.Favorites)
+        {
+            var movie = favorite.Movie;
+            <div class="col">
+                <div class="movie-card">
+                    <div class="movie-poster">
+                        @if (!string.IsNullOrEmpty(movie.PosterPath))
+                        {
+                            <img src="@movie.PosterPath" alt="@movie.Title" class="img-fluid" />
+                        }
+                        else
+                        {
+                            <div class="no-poster">
+                                <i class="bi bi-film"></i>
+                            </div>
+                        }
+                        <div class="movie-rating">
+                            <span><i class="bi bi-star-fill me-1"></i>@movie.Rating.ToString("0.0")</span>
+                        </div>
+                        <div class="movie-actions">
+                            <form method="post" asp-page-handler="RemoveFavorite">
+                                <input type="hidden" name="favoriteId" value="@favorite.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm" title="Rimuovi dai preferiti">
+                                    <i class="bi bi-heart-fill"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="movie-info">
+                        <h5 class="movie-title"><a asp-page="./Details" asp-route-id="@movie.Id">@movie.Title</a></h5>
+                        <div class="movie-year">
+                            @(movie.ReleaseDate?.Year.ToString() ?? "N/A")
+                            @if (movie.IsVerified)
+                            {
+                                <span class="verified-badge ms-2" title="Film verificato"><i class="bi bi-patch-check-fill"></i></span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Paginazione -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Pagine preferiti">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.CurrentPage == 1 ? "disabled" : "")">
+                    <a class="page-link" asp-page="./Favorites" asp-route-p="@(Model.CurrentPage - 1)">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+
+                @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <a class="page-link" asp-page="./Favorites" asp-route-p="@i">@i</a>
+                    </li>
+                }
+
+                <li class="page-item @(Model.CurrentPage == Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-page="./Favorites" asp-route-p="@(Model.CurrentPage + 1)">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="empty-state">
+        <div class="empty-icon">
+            <i class="bi bi-heart"></i>
+        </div>
+        <h2>Non hai ancora film preferiti</h2>
+        <p>Esplora il nostro catalogo e aggiungi film ai preferiti per trovarli facilmente qui.</p>
+        <a asp-page="./Index" class="btn btn-primary mt-3">
+            <i class="bi bi-film me-1"></i> Esplora Film
+        </a>
+    </div>
+}
+
+@section Styles {
+    <style>
+        .favorites-header {
+            margin-bottom: 2rem;
+        }
+
+        .movie-card {
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+            background-color: #fff;
+        }
+
+            .movie-card:hover {
+                transform: translateY(-8px);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            }
+
+        .movie-poster {
+            position: relative;
+            aspect-ratio: 2/3;
+            overflow: hidden;
+            background-color: #eee;
+        }
+
+            .movie-poster img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.3s;
+            }
+
+        .movie-card:hover .movie-poster img {
+            transform: scale(1.05);
+        }
+
+        .no-poster {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e5e5e5;
+        }
+
+            .no-poster i {
+                font-size: 3rem;
+                color: #999;
+            }
+
+        .movie-rating {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0,0,0,0.8);
+            color: #ffcc00;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .movie-actions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+        }
+
+        .movie-info {
+            padding: 1rem;
+        }
+
+        .movie-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+            .movie-title a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+        .movie-year {
+            color: #777;
+            font-size: 0.9rem;
+        }
+
+        .verified-badge {
+            color: #4caf50;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .empty-icon {
+            font-size: 5rem;
+            color: #ddd;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h2 {
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .empty-state p {
+            color: #777;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+}

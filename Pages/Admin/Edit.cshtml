@@ -1,0 +1,115 @@
+﻿@page
+@model CineVerify.Pages.Admin.EditModel
+@{
+    ViewData["Title"] = "Modifica Utente";
+}
+
+<div class="admin-heading">
+    <h1><i class="bi bi-pencil-square me-2"></i>@ViewData["Title"]</h1>
+    <a asp-page="./Users" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i> Torna all'elenco
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-person-gear me-2"></i>Modifica i dettagli dell'utente</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger alert alert-danger" role="alert"></div>
+                    <input type="hidden" asp-for="Input.Id" />
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input asp-for="Input.Nome" class="form-control" />
+                                <label asp-for="Input.Nome" class="form-label">
+                                    <i class="bi bi-person me-1"></i> Nome
+                                </label>
+                                <span asp-validation-for="Input.Nome" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input asp-for="Input.Cognome" class="form-control" />
+                                <label asp-for="Input.Cognome" class="form-label">
+                                    <i class="bi bi-person me-1"></i> Cognome
+                                </label>
+                                <span asp-validation-for="Input.Cognome" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <input asp-for="Input.Email" class="form-control" />
+                        <label asp-for="Input.Email" class="form-label">
+                            <i class="bi bi-envelope me-1"></i> Email
+                        </label>
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <select asp-for="Input.Role" asp-items="Model.RolesList" class="form-select">
+                            <option value="">-- Seleziona un ruolo --</option>
+                        </select>
+                        <label asp-for="Input.Role" class="form-label">
+                            <i class="bi bi-shield me-1"></i> Ruolo
+                        </label>
+                        <span asp-validation-for="Input.Role" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input asp-for="Input.EmailConfirmed" class="form-check-input" />
+                        <label asp-for="Input.EmailConfirmed" class="form-check-label">
+                            <i class="bi bi-check-circle me-1"></i> Account confermato
+                        </label>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <input asp-for="Input.NewPassword" class="form-control" />
+                        <label asp-for="Input.NewPassword" class="form-label">
+                            <i class="bi bi-lock me-1"></i> Nuova password
+                        </label>
+                        <span asp-validation-for="Input.NewPassword" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i> Salva modifiche
+                        </button>
+                        <a asp-page="./Users" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Annulla
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="bi bi-info-circle me-2"></i>Informazioni</h4>
+            </div>
+            <div class="card-body">
+                <p>In questa pagina puoi modificare i dettagli dell'utente:</p>
+                <ul class="mb-4">
+                    <li><i class="bi bi-person-vcard me-2 text-primary"></i>Informazioni personali</li>
+                    <li><i class="bi bi-envelope-check me-2 text-primary"></i>Email e stato di conferma</li>
+                    <li><i class="bi bi-shield-lock me-2 text-primary"></i>Ruolo nell'applicazione</li>
+                    <li><i class="bi bi-key me-2 text-primary"></i>Password dell'account</li>
+                </ul>
+                <div class="alert alert-info">
+                    <i class="bi bi-lightbulb me-2"></i>
+                    Se non desideri modificare la password, lascia il campo vuoto.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

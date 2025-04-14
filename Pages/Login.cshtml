@@ -1,0 +1,64 @@
+﻿@page
+@model CineVerify.Pages.LoginModel
+
+@{
+    ViewData["Title"] = "Accedi";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card login-card">
+            <div class="login-header">
+                <i class="bi bi-film display-4 mb-3"></i>
+                <h2>@ViewData["Title"] a CineVerify</h2>
+                <p>Inserisci le tue credenziali per continuare</p>
+            </div>
+            <div class="login-body">
+                <form id="account" method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger alert alert-danger" role="alert"></div>
+
+                    <div class="form-floating mb-4">
+                        <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="nome@esempio.com" />
+                        <label asp-for="Input.Email" class="form-label">
+                            <i class="bi bi-envelope me-1"></i> Email
+                        </label>
+                        <span asp-validation-for="Input.Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-floating mb-4">
+                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
+                        <label asp-for="Input.Password" class="form-label">
+                            <i class="bi bi-lock me-1"></i> Password
+                        </label>
+                        <span asp-validation-for="Input.Password" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" asp-for="Input.RememberMe" />
+                        <label class="form-check-label" asp-for="Input.RememberMe">
+                            @Html.DisplayNameFor(m => m.Input.RememberMe)
+                        </label>
+                    </div>
+
+                    <div class="d-grid mb-4">
+                        <button id="login-submit" type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-box-arrow-in-right me-2"></i> Accedi
+                        </button>
+                    </div>
+
+                    <div class="text-center">
+                        <p>
+                            <a asp-page="/Register" asp-route-returnUrl="@Model.ReturnUrl">
+                                <i class="bi bi-person-plus me-1"></i> Non hai un account? Registrati qui
+                            </a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

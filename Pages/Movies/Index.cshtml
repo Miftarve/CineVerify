@@ -1,0 +1,208 @@
+﻿@page
+@model CineVerify.Pages.Movies.IndexModel
+@{
+    ViewData["Title"] = "Film";
+}
+
+<div class="container movie-list-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4 text-primary">@ViewData["Title"]</h1>
+        <div class="search-container">
+            <form method="get" class="d-flex">
+                <input type="text" name="searchQuery" class="form-control" placeholder="Cerca film..." value="@Model.SearchQuery" />
+                <button type="submit" class="btn btn-primary ms-2">
+                    <i class="bi bi-search"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(TempData["Message"] as string))
+    {
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            @TempData["Message"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SearchQuery))
+    {
+        <div class="alert alert-light">
+            Risultati per: <strong>@Model.SearchQuery</strong>
+            <a asp-page="./Index" class="float-end">Azzera ricerca</a>
+        </div>
+    }
+
+    @if (!Model.Movies.Any())
+    {
+        <div class="alert alert-warning">
+            @(string.IsNullOrEmpty(Model.SearchQuery)
+                ? "Nessun film disponibile. Prova a cercare film da aggiungere."
+                : "Nessun risultato trovato per la tua ricerca.")
+        </div>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+            @foreach (var movie in Model.Movies)
+            {
+                <div class="col">
+                    <div class="card movie-card h-100">
+                        <div class="movie-poster">
+                            @if (!string.IsNullOrEmpty(movie.PosterPath))
+                            {
+                                <img src="@movie.PosterPath" class="card-img-top" alt="@movie.Title" />
+                            }
+                            else
+                            {
+                                <div class="no-poster">
+                                    <i class="bi bi-film"></i>
+                                </div>
+                            }
+                            <div class="movie-overlay">
+                                <a asp-page="./Details" asp-route-id="@movie.Id" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-info-circle"></i> Dettagli
+                                </a>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">@movie.Title</h5>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="rating-badge">
+                                    <i class="bi bi-star-fill text-warning"></i>
+                                    <span>@movie.Rating.ToString("F1")</span>
+                                </div>
+                                <small class="text-muted">
+                                    @(movie.ReleaseDate?.Year ?? 0)
+                                </small>
+                            </div>
+                            @if (movie.IsVerified)
+                            {
+                                <div class="verified-badge mt-2">
+                                    <i class="bi bi-patch-check-fill"></i> Verificato
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex justify-content-center mt-4">
+            <nav aria-label="Paginazione film">
+                <ul class="pagination">
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" asp-page="./Index" asp-route-p="@i" asp-route-searchQuery="@Model.SearchQuery">
+                                @i
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    }
+</div>
+
+@section Styles {
+    <style>
+        .movie-list-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+
+        .movie-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            overflow: hidden;
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+            .movie-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            }
+
+        .movie-poster {
+            position: relative;
+            overflow: hidden;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f0f0f0;
+        }
+
+            .movie-poster img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+
+        .no-poster {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e9ecef;
+            color: #6c757d;
+        }
+
+            .no-poster i {
+                font-size: 3rem;
+            }
+
+        .movie-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .movie-card:hover .movie-overlay {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.3;
+            margin-bottom: 0.5rem;
+            height: 2.8rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .rating-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .verified-badge {
+            color: #198754;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .search-container {
+            width: 300px;
+        }
+    </style>
+}

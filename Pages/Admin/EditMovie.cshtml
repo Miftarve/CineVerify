@@ -1,0 +1,217 @@
+﻿@page
+@model CineVerify.Pages.Admin.EditMovieModel
+@{
+    ViewData["Title"] = "Modifica Film";
+}
+
+<div class="admin-heading">
+    <h1><i class="bi bi-pencil-square me-2"></i>Modifica Film</h1>
+    <a asp-page="./Movies" class="btn btn-outline-primary">
+        <i class="bi bi-arrow-left me-1"></i> Torna all'elenco
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Dettagli del Film</h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+                    <input type="hidden" asp-for="Movie.Id" />
+                    <input type="hidden" asp-for="Movie.TmdbId" />
+                    <input type="hidden" asp-for="Movie.ImdbId" />
+                    <input type="hidden" asp-for="Movie.DateAdded" />
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Movie.Title" class="form-label">Titolo</label>
+                                <input asp-for="Movie.Title" class="form-control" required />
+                                <span asp-validation-for="Movie.Title" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Movie.OriginalTitle" class="form-label">Titolo Originale</label>
+                                <input asp-for="Movie.OriginalTitle" class="form-control" />
+                                <span asp-validation-for="Movie.OriginalTitle" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Movie.Description" class="form-label">Descrizione</label>
+                        <textarea asp-for="Movie.Description" class="form-control" rows="5"></textarea>
+                        <span asp-validation-for="Movie.Description" class="text-danger"></span>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Movie.ReleaseDate" class="form-label">Data di Uscita</label>
+                                <input type="date" asp-for="Movie.ReleaseDate" class="form-control" />
+                                <span asp-validation-for="Movie.ReleaseDate" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="GenresString" class="form-label">Generi (separati da virgola)</label>
+                                <input asp-for="GenresString" class="form-control" />
+                                <span asp-validation-for="GenresString" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Movie.Rating" class="form-label">Valutazione (0-10)</label>
+                                <input type="number" step="0.1" min="0" max="10" asp-for="Movie.Rating" class="form-control" />
+                                <span asp-validation-for="Movie.Rating" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Movie.VoteCount" class="form-label">Numero di Voti</label>
+                                <input type="number" min="0" asp-for="Movie.VoteCount" class="form-control" />
+                                <span asp-validation-for="Movie.VoteCount" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Movie.PosterPath" class="form-label">URL Poster</label>
+                                <input asp-for="Movie.PosterPath" class="form-control" />
+                                <span asp-validation-for="Movie.PosterPath" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Movie.BackdropPath" class="form-label">URL Sfondo</label>
+                                <input asp-for="Movie.BackdropPath" class="form-control" />
+                                <span asp-validation-for="Movie.BackdropPath" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Movie.TrailerUrl" class="form-label">URL Trailer</label>
+                        <input asp-for="Movie.TrailerUrl" class="form-control" />
+                        <span asp-validation-for="Movie.TrailerUrl" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" asp-for="Movie.IsVerified" />
+                        <label class="form-check-label" asp-for="Movie.IsVerified">Film Verificato</label>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label asp-for="Movie.GeminiAnalysis" class="form-label">Analisi IA (generata da Gemini)</label>
+                        <textarea asp-for="Movie.GeminiAnalysis" class="form-control" rows="8"></textarea>
+                        <div class="form-text">L'analisi è generata automaticamente da Gemini AI. Puoi modificarla o rigenerarla.</div>
+                        <span asp-validation-for="Movie.GeminiAnalysis" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Salva Modifiche
+                        </button>
+                        <button type="submit" asp-page-handler="RegenerateAnalysis" class="btn btn-outline-secondary">
+                            <i class="bi bi-stars me-1"></i> Rigenera Analisi IA
+                        </button>
+                        <a asp-page="./Movies" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-1"></i> Annulla
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4 class="mb-0">Anteprima</h4>
+            </div>
+            <div class="card-body text-center">
+                @if (!string.IsNullOrEmpty(Model.Movie?.PosterPath))
+                {
+                    <img src="@Model.Movie.PosterPath" alt="@Model.Movie.Title" class="img-fluid rounded mb-3" style="max-height: 300px;" />
+                }
+                else
+                {
+                    <div class="no-poster-preview mb-3">
+                        <i class="bi bi-film"></i>
+                    </div>
+                }
+
+                <h5>@(string.IsNullOrEmpty(Model.Movie?.Title) ? "Titolo Film" : Model.Movie.Title)</h5>
+                <p class="text-muted">@(Model.Movie?.ReleaseDate?.Year.ToString() ?? "Anno")</p>
+
+                @if (!string.IsNullOrEmpty(Model.GenresString))
+                {
+                    <div class="genres-preview">
+                        @foreach (var genre in Model.GenresString.Split(',').Select(g => g.Trim()))
+                        {
+                            <span class="badge bg-light text-dark me-1">@genre</span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">Statistiche</h4>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Valutazione media
+                        <span class="badge bg-warning text-dark">@Model.Movie?.Rating.ToString("0.0")/10</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Recensioni utenti
+                        <span class="badge bg-primary">@Model.ReviewsCount</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Aggiunto nei preferiti
+                        <span class="badge bg-danger">@Model.FavoritesCount</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Visualizzazioni
+                        <span class="badge bg-success">@Model.ViewsCount</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .no-poster-preview {
+            aspect-ratio: 2/3;
+            max-height: 300px;
+            background-color: #e5e5e5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+            .no-poster-preview i {
+                font-size: 4rem;
+                color: #999;
+            }
+    </style>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

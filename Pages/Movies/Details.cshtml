@@ -1,0 +1,511 @@
+﻿@page "{id:int}"
+@model CineVerify.Pages.Movies.DetailsModel
+@{
+    ViewData["Title"] = Model.Movie?.Title ?? "Dettagli Film";
+}
+
+@if (Model.Movie == null)
+{
+    <div class="container mt-5">
+        <div class="alert alert-danger">
+            <h4>Film non trovato</h4>
+            <p>Il film richiesto non è disponibile o è stato rimosso.</p>
+            <a asp-page="/Index" class="btn btn-primary">Torna alla Home</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="movie-details-container">
+        @if (!string.IsNullOrEmpty(Model.Movie.BackdropPath))
+        {
+            <div class="backdrop-container">
+                <div class="backdrop-overlay"></div>
+                <img src="@Model.Movie.BackdropPath" alt="@Model.Movie.Title backdrop" class="backdrop-image"
+                     onerror="this.style.display='none'; this.parentElement.style.display='none';" />
+            </div>
+        }
+
+        <div class="container position-relative movie-content pt-4">
+            <div class="row">
+                <div class="col-md-4 col-lg-3 mb-4">
+                    <div class="poster-container">
+                        @if (!string.IsNullOrEmpty(Model.Movie.PosterPath))
+                        {
+                            <img src="@Model.Movie.PosterPath" alt="@Model.Movie.Title" class="movie-poster img-fluid"
+                                 onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'no-poster\'><i class=\'bi bi-film\'></i></div>';" />
+                        }
+                        else
+                        {
+                            <div class="no-poster">
+                                <i class="bi bi-film"></i>
+                            </div>
+                        }
+
+                        @if (Model.Movie.IsVerified)
+                        {
+                            <div class="verified-badge">
+                                <i class="bi bi-patch-check-fill"></i> Verificato da CineVerify
+                            </div>
+                        }
+                    </div>
+
+                    <div class="action-buttons mt-3">
+                        @if (Model.IsFavorite)
+                        {
+                            <form method="post" asp-page-handler="RemoveFromFavorites" class="d-inline">
+                                <input type="hidden" name="movieId" value="@Model.Movie.Id" />
+                                <button type="submit" class="btn btn-outline-danger btn-sm w-100 mb-2">
+                                    <i class="bi bi-heart-fill"></i> Rimuovi dai preferiti
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-page-handler="AddToFavorites" class="d-inline">
+                                <input type="hidden" name="movieId" value="@Model.Movie.Id" />
+                                <button type="submit" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                    <i class="bi bi-heart"></i> Aggiungi ai preferiti
+                                </button>
+                            </form>
+                        }
+
+                        <form method="post" asp-page-handler="MarkAsWatched" class="d-inline">
+                            <input type="hidden" name="movieId" value="@Model.Movie.Id" />
+                            <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                                <i class="bi bi-check-circle"></i> Segna come visto
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="col-md-8 col-lg-9">
+                    <h1 class="movie-title mb-1">@Model.Movie.Title</h1>
+
+                    @if (!string.IsNullOrEmpty(Model.Movie.OriginalTitle) && Model.Movie.OriginalTitle != Model.Movie.Title)
+                    {
+                        <h5 class="text-muted mb-3">@Model.Movie.OriginalTitle</h5>
+                    }
+
+                    <div class="movie-meta mb-4">
+                        <span class="rating">
+                            <i class="bi bi-star-fill text-warning"></i>
+                            <strong>@Model.Movie.Rating.ToString("F1")</strong>/10
+                        </span>
+                        <span class="votes">(@Model.Movie.VoteCount valutazioni)</span>
+
+                        @if (Model.Movie.ReleaseDate.HasValue)
+                        {
+                            <span class="year">@Model.Movie.ReleaseDate.Value.Year</span>
+                        }
+
+                        @if (Model.Movie.Genres != null && Model.Movie.Genres.Length > 0)
+                        {
+                            <span class="genres">@string.Join(", ", Model.Movie.Genres)</span>
+                        }
+                    </div>
+
+                    <div class="synopsis mb-4">
+                        <h4>Trama</h4>
+                        @if (!string.IsNullOrEmpty(Model.Movie.Description))
+                        {
+                            <p>@Model.Movie.Description</p>
+                        }
+                        else
+                        {
+                            <p class="text-muted">Nessuna descrizione disponibile.</p>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Movie.TrailerUrl))
+                    {
+                        <div class="trailer mb-4">
+                            <h4>Trailer</h4>
+                            <div class="ratio ratio-16x9">
+                                @{
+                                    var trailerKey = Model.Movie.TrailerUrl;
+                                    if (Model.Movie.TrailerUrl.Contains("="))
+                                    {
+                                        trailerKey = Model.Movie.TrailerUrl.Split('=').Last();
+                                    }
+                                }
+                                <iframe src="https://www.youtube.com/embed/@trailerKey"
+                                        title="YouTube video player" allowfullscreen
+                                        onerror="this.parentElement.innerHTML='<div class=\'alert alert-warning\'>Impossibile caricare il trailer</div>';"></iframe>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Movie.GeminiAnalysis))
+                    {
+                        <div class="gemini-analysis mb-4">
+                            <h4>Analisi IA</h4>
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="ai-analysis-content">
+                                        @Html.Raw(Model.Movie.GeminiAnalysis.Replace("\n", "<br/>"))
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (User.IsInRole("Admin") || User.IsInRole("Critic"))
+                    {
+                        <div class="gemini-analysis mb-4">
+                            <h4>Analisi IA</h4>
+                            <form method="post" asp-page-handler="GenerateAnalysis">
+                                <input type="hidden" name="movieId" value="@Model.Movie.Id" />
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-magic"></i> Genera analisi con Gemini AI
+                                </button>
+                            </form>
+                        </div>
+                    }
+
+                    <div class="user-rating mb-4">
+                        <h4>La tua valutazione</h4>
+                        <form method="post" asp-page-handler="Rate" class="rate-form">
+                            <input type="hidden" name="movieId" value="@Model.Movie.Id" />
+                            <div class="rating-stars">
+                                @for (int i = 1; i <= 10; i++)
+                                {
+                                    <input type="radio" id="star@i" name="rating" value="@i" @((int)Model.UserRatingValue == i ? "checked" : "") />
+                                    <label for="star@i" title="@i stella" class="me-1">@i</label>
+                                }
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-sm mt-2">Valuta</button>
+                        </form>
+                    </div>
+
+                    <div class="reviews mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4>Recensioni (@Model.Reviews.Count)</h4>
+                            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                                <i class="bi bi-pencil"></i> Scrivi recensione
+                            </button>
+                        </div>
+
+                        @if (!Model.Reviews.Any())
+                        {
+                            <div class="alert alert-light">
+                                Non ci sono ancora recensioni per questo film. Scrivi la prima!
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="reviews-list">
+                                @foreach (var review in Model.Reviews)
+                                {
+                                    <div class="review-card mb-3">
+                                        <div class="review-header d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h5 class="review-title mb-1">@review.Title</h5>
+                                                <div class="review-meta text-muted small">
+                                                    <span>Da @review.UserName</span>
+                                                    <span>• @review.DateCreated.ToString("dd MMM yyyy")</span>
+                                                    @if (review.Rating > 0)
+                                                    {
+                                                        <span>• Voto: @review.Rating.ToString("F1")/10</span>
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            @if (User.Identity.Name == review.UserName || User.IsInRole("Admin"))
+                                            {
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-link text-muted" data-bs-toggle="dropdown">
+                                                        <i class="bi bi-three-dots-vertical"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li>
+                                                            <a class="dropdown-item" href="#"
+                                                               onclick="editReview('@review.Id', '@review.Title', '@review.Content.Replace("'", "\\'").Replace("\n", "\\n")', '@review.Rating')">
+                                                                <i class="bi bi-pencil"></i> Modifica
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <form method="post" asp-page-handler="DeleteReview">
+                                                                <input type="hidden" name="reviewId" value="@review.Id" />
+                                                                <button type="submit" class="dropdown-item text-danger">
+                                                                    <i class="bi bi-trash"></i> Elimina
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div class="review-content mt-2">
+                                            @Html.Raw(review.Content.Replace("\n", "<br/>"))
+                                        </div>
+
+                                        @if (!string.IsNullOrEmpty(review.SentimentAnalysis))
+                                        {
+                                            <div class="sentiment-analysis mt-2 small">
+                                                <span class="badge @GetSentimentBadgeClass(review.SentimentAnalysis)">
+                                                    <i class="bi @GetSentimentIcon(review.SentimentAnalysis)"></i>
+                                                    @review.SentimentAnalysis
+                                                </span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal per recensione -->
+    <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="post" asp-page-handler="AddReview">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reviewModalLabel">Scrivi una recensione</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" name="movieId" value="@Model.Movie.Id" />
+                        <input type="hidden" id="reviewId" name="reviewId" value="0" />
+
+                        <div class="mb-3">
+                            <label for="reviewTitle" class="form-label">Titolo</label>
+                            <input type="text" class="form-control" id="reviewTitle" name="title" required maxlength="100">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reviewContent" class="form-label">Recensione</label>
+                            <textarea class="form-control" id="reviewContent" name="content" rows="6" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Valutazione</label>
+                            <div class="rating-select">
+                                @for (int i = 1; i <= 10; i++)
+                                {
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="rating" id="rating@i" value="@i">
+                                        <label class="form-check-label" for="rating@i">@i</label>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                        <button type="submit" class="btn btn-primary">Pubblica recensione</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // Aggiunta di controlli per gestire errori di caricamento delle immagini
+        document.addEventListener("DOMContentLoaded", function() {
+            // Verifica se gli URL delle immagini sono validi
+            function fixImageUrls() {
+                const imageBaseUrl = "https://image.tmdb.org/t/p/";
+
+                // Controllo per il poster
+                const poster = document.querySelector(".movie-poster");
+                if (poster && poster.src && !poster.src.includes("http")) {
+                    // Se l'URL non contiene http, probabilmente è un percorso relativo
+                    const posterPath = poster.src.split('/').pop();
+                    poster.src = imageBaseUrl + "w500" + posterPath;
+                }
+
+                // Controllo per lo sfondo
+                const backdrop = document.querySelector(".backdrop-image");
+                if (backdrop && backdrop.src && !backdrop.src.includes("http")) {
+                    const backdropPath = backdrop.src.split('/').pop();
+                    backdrop.src = imageBaseUrl + "original" + backdropPath;
+                }
+            }
+
+            // Chiamata immediata per correggere URL
+            fixImageUrls();
+        });
+
+        function editReview(id, title, content, rating) {
+            document.getElementById('reviewId').value = id;
+            document.getElementById('reviewTitle').value = title;
+            document.getElementById('reviewContent').value = content.replace(/\\n/g, '\n');
+
+            if (rating && rating > 0) {
+                document.getElementById('rating' + rating).checked = true;
+            }
+
+            var modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+            modal.show();
+        }
+    </script>
+}
+
+@functions {
+    public string GetSentimentBadgeClass(string sentiment)
+    {
+        return sentiment?.ToLower() switch
+        {
+            "positivo" => "bg-success",
+            "negativo" => "bg-danger",
+            "neutro" => "bg-secondary",
+            _ => "bg-info"
+        };
+    }
+
+    public string GetSentimentIcon(string sentiment)
+    {
+        return sentiment?.ToLower() switch
+        {
+            "positivo" => "bi-emoji-smile",
+            "negativo" => "bi-emoji-frown",
+            "neutro" => "bi-emoji-neutral",
+            _ => "bi-chat-square-text"
+        };
+    }
+}
+
+@section Styles {
+    <style>
+        .backdrop-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 500px;
+            overflow: hidden;
+            z-index: -1;
+        }
+
+        .backdrop-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.9) 100%);
+            z-index: 1;
+        }
+
+        .backdrop-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .movie-content {
+            padding-top: 2rem;
+            color: #333;
+        }
+
+        .backdrop-container + .movie-content {
+            color: white;
+            padding-top: 3rem;
+        }
+
+        .movie-poster {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .no-poster {
+            width: 100%;
+            height: 400px;
+            background-color: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+
+            .no-poster i {
+                font-size: 5rem;
+            }
+
+        .verified-badge {
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background-color: rgba(25, 135, 84, 0.1);
+            border: 1px solid rgba(25, 135, 84, 0.2);
+            color: #198754;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .movie-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .movie-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .rating {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .review-card {
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .backdrop-container + .movie-content .review-card {
+            background-color: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .rating-stars {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+            .rating-stars input[type="radio"] {
+                display: none;
+            }
+
+            .rating-stars label {
+                cursor: pointer;
+                width: 30px;
+                height: 30px;
+                background-color: #e4e4e4;
+                color: #333;
+                border-radius: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+
+            .rating-stars input[type="radio"]:checked + label {
+                background-color: #ffc107;
+                color: white;
+            }
+
+        .ai-analysis-content {
+            line-height: 1.6;
+        }
+    </style>
+}
