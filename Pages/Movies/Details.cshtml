@@ -7,10 +7,13 @@
 @if (Model.Movie == null)
 {
     <div class="container mt-5">
-        <div class="alert alert-danger">
-            <h4>Film non trovato</h4>
+        <div class="error-container">
+            <div class="error-icon"><i class="bi bi-film-slash"></i></div>
+            <h2>Film non trovato</h2>
             <p>Il film richiesto non è disponibile o è stato rimosso.</p>
-            <a asp-page="/Index" class="btn btn-primary">Torna alla Home</a>
+            <a asp-page="/Index" class="btn-primary-action">
+                <i class="bi bi-house-door me-2"></i>Torna alla Home
+            </a>
         </div>
     </div>
 }
@@ -32,7 +35,7 @@ else
                     <div class="poster-container">
                         @if (!string.IsNullOrEmpty(Model.Movie.PosterPath))
                         {
-                            <img src="@Model.Movie.PosterPath" alt="@Model.Movie.Title" class="movie-poster img-fluid"
+                            <img src="@Model.Movie.PosterPath" alt="@Model.Movie.Title" class="movie-poster"
                                  onerror="this.style.display='none'; this.parentElement.innerHTML='<div class=\'no-poster\'><i class=\'bi bi-film\'></i></div>';" />
                         }
                         else
@@ -45,17 +48,17 @@ else
                         @if (Model.Movie.IsVerified)
                         {
                             <div class="verified-badge">
-                                <i class="bi bi-patch-check-fill"></i> Verificato da CineVerify
+                                <i class="bi bi-shield-check"></i> Verificato da CineVerify
                             </div>
                         }
                     </div>
 
-                    <div class="action-buttons mt-3">
+                    <div class="action-buttons mt-4">
                         @if (Model.IsFavorite)
                         {
                             <form method="post" asp-page-handler="RemoveFromFavorites" class="d-inline">
                                 <input type="hidden" name="movieId" value="@Model.Movie.Id" />
-                                <button type="submit" class="btn btn-outline-danger btn-sm w-100 mb-2">
+                                <button type="submit" class="btn-action btn-favorite active">
                                     <i class="bi bi-heart-fill"></i> Rimuovi dai preferiti
                                 </button>
                             </form>
@@ -64,131 +67,176 @@ else
                         {
                             <form method="post" asp-page-handler="AddToFavorites" class="d-inline">
                                 <input type="hidden" name="movieId" value="@Model.Movie.Id" />
-                                <button type="submit" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                                <button type="submit" class="btn-action btn-favorite">
                                     <i class="bi bi-heart"></i> Aggiungi ai preferiti
                                 </button>
                             </form>
                         }
 
-                        <form method="post" asp-page-handler="MarkAsWatched" class="d-inline">
+                        <form method="post" asp-page-handler="MarkAsWatched" class="d-inline mt-2">
                             <input type="hidden" name="movieId" value="@Model.Movie.Id" />
-                            <button type="submit" class="btn btn-outline-success btn-sm w-100">
+                            <button type="submit" class="btn-action btn-watched">
                                 <i class="bi bi-check-circle"></i> Segna come visto
                             </button>
                         </form>
                     </div>
-                </div>
 
-                <div class="col-md-8 col-lg-9">
-                    <h1 class="movie-title mb-1">@Model.Movie.Title</h1>
+                    <div class="movie-stats mt-4">
+                        <div class="stat-item">
+                            <div class="stat-icon"><i class="bi bi-star-fill"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-value">@Model.Movie.Rating.ToString("F1")</span>
+                                <span class="stat-label">Valutazione</span>
+                            </div>
+                        </div>
 
-                    @if (!string.IsNullOrEmpty(Model.Movie.OriginalTitle) && Model.Movie.OriginalTitle != Model.Movie.Title)
-                    {
-                        <h5 class="text-muted mb-3">@Model.Movie.OriginalTitle</h5>
-                    }
-
-                    <div class="movie-meta mb-4">
-                        <span class="rating">
-                            <i class="bi bi-star-fill text-warning"></i>
-                            <strong>@Model.Movie.Rating.ToString("F1")</strong>/10
-                        </span>
-                        <span class="votes">(@Model.Movie.VoteCount valutazioni)</span>
+                        <div class="stat-item">
+                            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+                            <div class="stat-data">
+                                <span class="stat-value">@Model.Movie.VoteCount</span>
+                                <span class="stat-label">Voti</span>
+                            </div>
+                        </div>
 
                         @if (Model.Movie.ReleaseDate.HasValue)
                         {
-                            <span class="year">@Model.Movie.ReleaseDate.Value.Year</span>
-                        }
-
-                        @if (Model.Movie.Genres != null && Model.Movie.Genres.Length > 0)
-                        {
-                            <span class="genres">@string.Join(", ", Model.Movie.Genres)</span>
+                            <div class="stat-item">
+                                <div class="stat-icon"><i class="bi bi-calendar-event"></i></div>
+                                <div class="stat-data">
+                                    <span class="stat-value">@Model.Movie.ReleaseDate.Value.Year</span>
+                                    <span class="stat-label">Anno</span>
+                                </div>
+                            </div>
                         }
                     </div>
+                </div>
 
-                    <div class="synopsis mb-4">
-                        <h4>Trama</h4>
-                        @if (!string.IsNullOrEmpty(Model.Movie.Description))
-                        {
-                            <p>@Model.Movie.Description</p>
-                        }
-                        else
-                        {
-                            <p class="text-muted">Nessuna descrizione disponibile.</p>
-                        }
+                <div class="col-md-8 col-lg-9">
+                    <h1 class="movie-title">@Model.Movie.Title</h1>
+
+                    @if (!string.IsNullOrEmpty(Model.Movie.OriginalTitle) && Model.Movie.OriginalTitle != Model.Movie.Title)
+                    {
+                        <h5 class="movie-original-title">@Model.Movie.OriginalTitle</h5>
+                    }
+
+                    @if (Model.Movie.Genres != null && Model.Movie.Genres.Length > 0)
+                    {
+                        <div class="movie-genres mb-4">
+                            @foreach (var genre in Model.Movie.Genres)
+                            {
+                                <span class="genre-badge">@genre</span>
+                            }
+                        </div>
+                    }
+
+                    <div class="content-section">
+                        <h3 class="section-title">
+                            <i class="bi bi-text-paragraph section-icon"></i> Trama
+                        </h3>
+                        <div class="section-content">
+                            @if (!string.IsNullOrEmpty(Model.Movie.Description))
+                            {
+                                <p class="movie-description">@Model.Movie.Description</p>
+                            }
+                            else
+                            {
+                                <div class="no-content-message">
+                                    <i class="bi bi-info-circle"></i> Nessuna descrizione disponibile.
+                                </div>
+                            }
+                        </div>
                     </div>
 
                     @if (!string.IsNullOrEmpty(Model.Movie.TrailerUrl))
                     {
-                        <div class="trailer mb-4">
-                            <h4>Trailer</h4>
-                            <div class="ratio ratio-16x9">
-                                @{
-                                    var trailerKey = Model.Movie.TrailerUrl;
-                                    if (Model.Movie.TrailerUrl.Contains("="))
-                                    {
-                                        trailerKey = Model.Movie.TrailerUrl.Split('=').Last();
+                        <div class="content-section">
+                            <h3 class="section-title">
+                                <i class="bi bi-play-circle section-icon"></i> Trailer
+                            </h3>
+                            <div class="section-content">
+                                <div class="trailer-container">
+                                    @{
+                                        var trailerKey = Model.Movie.TrailerUrl;
+                                        if (Model.Movie.TrailerUrl.Contains("="))
+                                        {
+                                            trailerKey = Model.Movie.TrailerUrl.Split('=').Last();
+                                        }
                                     }
-                                }
-                                <iframe src="https://www.youtube.com/embed/@trailerKey"
-                                        title="YouTube video player" allowfullscreen
-                                        onerror="this.parentElement.innerHTML='<div class=\'alert alert-warning\'>Impossibile caricare il trailer</div>';"></iframe>
+                                    <iframe src="https://www.youtube.com/embed/@trailerKey"
+                                            title="YouTube video player" allowfullscreen
+                                            onerror="this.parentElement.innerHTML='<div class=\'no-content-message\'><i class=\'bi bi-exclamation-circle\'></i> Impossibile caricare il trailer</div>';"></iframe>
+                                </div>
                             </div>
                         </div>
                     }
 
                     @if (!string.IsNullOrEmpty(Model.Movie.GeminiAnalysis))
                     {
-                        <div class="gemini-analysis mb-4">
-                            <h4>Analisi IA</h4>
-                            <div class="card">
-                                <div class="card-body">
-                                    <div class="ai-analysis-content">
-                                        @Html.Raw(Model.Movie.GeminiAnalysis.Replace("\n", "<br/>"))
-                                    </div>
-                                </div>
+                        <div class="content-section">
+                            <h3 class="section-title">
+                                <i class="bi bi-robot section-icon"></i> Analisi IA
+                            </h3>
+                            <div class="section-content ai-analysis">
+                                @Html.Raw(Model.Movie.GeminiAnalysis.Replace("\n", "<br/>"))
                             </div>
                         </div>
                     }
                     else if (User.IsInRole("Admin") || User.IsInRole("Critic"))
                     {
-                        <div class="gemini-analysis mb-4">
-                            <h4>Analisi IA</h4>
-                            <form method="post" asp-page-handler="GenerateAnalysis">
-                                <input type="hidden" name="movieId" value="@Model.Movie.Id" />
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-magic"></i> Genera analisi con Gemini AI
-                                </button>
-                            </form>
+                        <div class="content-section">
+                            <h3 class="section-title">
+                                <i class="bi bi-robot section-icon"></i> Analisi IA
+                            </h3>
+                            <div class="section-content">
+                                <form method="post" asp-page-handler="GenerateAnalysis">
+                                    <input type="hidden" name="movieId" value="@Model.Movie.Id" />
+                                    <button type="submit" class="btn-primary-action">
+                                        <i class="bi bi-magic me-2"></i> Genera analisi con Gemini AI
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     }
 
-                    <div class="user-rating mb-4">
-                        <h4>La tua valutazione</h4>
-                        <form method="post" asp-page-handler="Rate" class="rate-form">
-                            <input type="hidden" name="movieId" value="@Model.Movie.Id" />
-                            <div class="rating-stars">
-                                @for (int i = 1; i <= 10; i++)
-                                {
-                                    <input type="radio" id="star@i" name="rating" value="@i" @((int)Model.UserRatingValue == i ? "checked" : "") />
-                                    <label for="star@i" title="@i stella" class="me-1">@i</label>
-                                }
-                            </div>
-                            <button type="submit" class="btn btn-primary btn-sm mt-2">Valuta</button>
-                        </form>
+                    <div class="content-section">
+                        <h3 class="section-title">
+                            <i class="bi bi-star-half section-icon"></i> La tua valutazione
+                        </h3>
+                        <div class="section-content">
+                            <form method="post" asp-page-handler="Rate" class="rate-form">
+                                <input type="hidden" name="movieId" value="@Model.Movie.Id" />
+                                <div class="rating-stars">
+                                    @for (int i = 10; i >= 1; i--)
+                                    {
+                                        <input type="radio" id="star@i" name="rating" value="@i" @((int)Model.UserRatingValue == i ? "checked" : "") />
+                                        <label for="star@i" title="@i stella"></label>
+                                    }
+                                </div>
+                                <div class="rating-value">
+                                    <span id="ratingDisplay">@(Model.UserRatingValue > 0 ? Model.UserRatingValue.ToString() : "-")</span>/10
+                                </div>
+                                <button type="submit" class="btn-primary-action btn-sm mt-2">
+                                    <i class="bi bi-check2 me-1"></i> Conferma valutazione
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
-                    <div class="reviews mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h4>Recensioni (@Model.Reviews.Count)</h4>
-                            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#reviewModal">
-                                <i class="bi bi-pencil"></i> Scrivi recensione
+                    <div class="content-section">
+                        <div class="section-header">
+                            <h3 class="section-title">
+                                <i class="bi bi-chat-dots section-icon"></i> Recensioni <span class="reviews-count">(@Model.Reviews.Count)</span>
+                            </h3>
+                            <button class="btn-primary-action" data-bs-toggle="modal" data-bs-target="#reviewModal">
+                                <i class="bi bi-pencil me-2"></i> Scrivi recensione
                             </button>
                         </div>
 
                         @if (!Model.Reviews.Any())
                         {
-                            <div class="alert alert-light">
-                                Non ci sono ancora recensioni per questo film. Scrivi la prima!
+                            <div class="no-content-message mt-3">
+                                <i class="bi bi-chat-square-text"></i>
+                                <p>Non ci sono ancora recensioni per questo film. Scrivi la prima!</p>
                             </div>
                         }
                         else
@@ -196,38 +244,46 @@ else
                             <div class="reviews-list">
                                 @foreach (var review in Model.Reviews)
                                 {
-                                    <div class="review-card mb-3">
-                                        <div class="review-header d-flex justify-content-between align-items-start">
-                                            <div>
-                                                <h5 class="review-title mb-1">@review.Title</h5>
-                                                <div class="review-meta text-muted small">
-                                                    <span>Da @review.UserName</span>
-                                                    <span>• @review.DateCreated.ToString("dd MMM yyyy")</span>
-                                                    @if (review.Rating > 0)
-                                                    {
-                                                        <span>• Voto: @review.Rating.ToString("F1")/10</span>
-                                                    }
+                                    <div class="review-card">
+                                        <div class="review-header">
+                                            <div class="user-info">
+                                                <div class="avatar">
+                                                    <i class="bi bi-person"></i>
+                                                </div>
+                                                <div class="user-details">
+                                                    <h5 class="review-title">@review.Title</h5>
+                                                    <div class="review-meta">
+                                                        <span class="author">@review.UserName</span>
+                                                        <span class="date">@review.DateCreated.ToString("dd MMM yyyy")</span>
+                                                        @if (review.Rating > 0)
+                                                        {
+                                                            <span class="review-rating">
+                                                                <i class="bi bi-star-fill"></i>
+                                                                @review.Rating.ToString("F1")
+                                                            </span>
+                                                        }
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             @if (User.Identity.Name == review.UserName || User.IsInRole("Admin"))
                                             {
-                                                <div class="dropdown">
-                                                    <button class="btn btn-sm btn-link text-muted" data-bs-toggle="dropdown">
+                                                <div class="review-actions dropdown">
+                                                    <button class="btn-icon" data-bs-toggle="dropdown">
                                                         <i class="bi bi-three-dots-vertical"></i>
                                                     </button>
                                                     <ul class="dropdown-menu">
                                                         <li>
                                                             <a class="dropdown-item" href="#"
                                                                onclick="editReview('@review.Id', '@review.Title', '@review.Content.Replace("'", "\\'").Replace("\n", "\\n")', '@review.Rating')">
-                                                                <i class="bi bi-pencil"></i> Modifica
+                                                                <i class="bi bi-pencil me-2"></i> Modifica
                                                             </a>
                                                         </li>
                                                         <li>
                                                             <form method="post" asp-page-handler="DeleteReview">
                                                                 <input type="hidden" name="reviewId" value="@review.Id" />
                                                                 <button type="submit" class="dropdown-item text-danger">
-                                                                    <i class="bi bi-trash"></i> Elimina
+                                                                    <i class="bi bi-trash me-2"></i> Elimina
                                                                 </button>
                                                             </form>
                                                         </li>
@@ -236,17 +292,15 @@ else
                                             }
                                         </div>
 
-                                        <div class="review-content mt-2">
+                                        <div class="review-content">
                                             @Html.Raw(review.Content.Replace("\n", "<br/>"))
                                         </div>
 
                                         @if (!string.IsNullOrEmpty(review.SentimentAnalysis))
                                         {
-                                            <div class="sentiment-analysis mt-2 small">
-                                                <span class="badge @GetSentimentBadgeClass(review.SentimentAnalysis)">
-                                                    <i class="bi @GetSentimentIcon(review.SentimentAnalysis)"></i>
-                                                    @review.SentimentAnalysis
-                                                </span>
+                                            <div class="sentiment-tag @GetSentimentClass(review.SentimentAnalysis)">
+                                                <i class="@GetSentimentIcon(review.SentimentAnalysis)"></i>
+                                                @review.SentimentAnalysis
                                             </div>
                                         }
                                     </div>
@@ -265,7 +319,10 @@ else
             <div class="modal-content">
                 <form method="post" asp-page-handler="AddReview">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="reviewModalLabel">Scrivi una recensione</h5>
+                        <h5 class="modal-title" id="reviewModalLabel">
+                            <i class="bi bi-pencil me-2"></i>
+                            Scrivi una recensione
+                        </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -273,31 +330,41 @@ else
                         <input type="hidden" id="reviewId" name="reviewId" value="0" />
 
                         <div class="mb-3">
-                            <label for="reviewTitle" class="form-label">Titolo</label>
-                            <input type="text" class="form-control" id="reviewTitle" name="title" required maxlength="100">
+                            <label for="reviewTitle" class="form-label">
+                                <i class="bi bi-type-h1 me-2"></i>Titolo
+                            </label>
+                            <input type="text" class="form-control" id="reviewTitle" name="title" required maxlength="100" placeholder="Inserisci un titolo per la tua recensione">
                         </div>
 
                         <div class="mb-3">
-                            <label for="reviewContent" class="form-label">Recensione</label>
-                            <textarea class="form-control" id="reviewContent" name="content" rows="6" required></textarea>
+                            <label for="reviewContent" class="form-label">
+                                <i class="bi bi-chat-square-text me-2"></i>Recensione
+                            </label>
+                            <textarea class="form-control" id="reviewContent" name="content" rows="6" required placeholder="Scrivi qui la tua recensione..."></textarea>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">Valutazione</label>
-                            <div class="rating-select">
+                            <label class="form-label">
+                                <i class="bi bi-star me-2"></i>Valutazione
+                            </label>
+                            <div class="modal-rating">
                                 @for (int i = 1; i <= 10; i++)
                                 {
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="rating" id="rating@i" value="@i">
-                                        <label class="form-check-label" for="rating@i">@i</label>
+                                    <div class="rating-option">
+                                        <input class="rating-input" type="radio" name="rating" id="rating@i" value="@i">
+                                        <label class="rating-label" for="rating@i">@i</label>
                                     </div>
                                 }
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                        <button type="submit" class="btn btn-primary">Pubblica recensione</button>
+                        <button type="button" class="btn-secondary-action" data-bs-dismiss="modal">
+                            <i class="bi bi-x-lg me-2"></i>Annulla
+                        </button>
+                        <button type="submit" class="btn-primary-action">
+                            <i class="bi bi-send me-2"></i>Pubblica recensione
+                        </button>
                     </div>
                 </form>
             </div>
@@ -307,21 +374,17 @@ else
 
 @section Scripts {
     <script>
-        // Aggiunta di controlli per gestire errori di caricamento delle immagini
         document.addEventListener("DOMContentLoaded", function() {
-            // Verifica se gli URL delle immagini sono validi
+            // Fix image URLs
             function fixImageUrls() {
                 const imageBaseUrl = "https://image.tmdb.org/t/p/";
 
-                // Controllo per il poster
                 const poster = document.querySelector(".movie-poster");
                 if (poster && poster.src && !poster.src.includes("http")) {
-                    // Se l'URL non contiene http, probabilmente è un percorso relativo
                     const posterPath = poster.src.split('/').pop();
                     poster.src = imageBaseUrl + "w500" + posterPath;
                 }
 
-                // Controllo per lo sfondo
                 const backdrop = document.querySelector(".backdrop-image");
                 if (backdrop && backdrop.src && !backdrop.src.includes("http")) {
                     const backdropPath = backdrop.src.split('/').pop();
@@ -329,8 +392,37 @@ else
                 }
             }
 
-            // Chiamata immediata per correggere URL
             fixImageUrls();
+
+            // Rating display update
+            const ratingInputs = document.querySelectorAll('.rating-stars input');
+            const ratingDisplay = document.getElementById('ratingDisplay');
+
+            if (ratingInputs && ratingDisplay) {
+                ratingInputs.forEach(input => {
+                    input.addEventListener('change', function() {
+                        ratingDisplay.textContent = this.value;
+                    });
+                });
+            }
+
+            // Animate sections on scroll
+            const animateOnScroll = () => {
+                const sections = document.querySelectorAll('.content-section');
+
+                sections.forEach(section => {
+                    const sectionTop = section.getBoundingClientRect().top;
+                    const windowHeight = window.innerHeight;
+
+                    if (sectionTop < windowHeight - 100) {
+                        section.classList.add('animated');
+                    }
+                });
+            };
+
+            // Initial call and scroll listener
+            animateOnScroll();
+            window.addEventListener('scroll', animateOnScroll);
         });
 
         function editReview(id, title, content, rating) {
@@ -349,14 +441,14 @@ else
 }
 
 @functions {
-    public string GetSentimentBadgeClass(string sentiment)
+    public string GetSentimentClass(string sentiment)
     {
         return sentiment?.ToLower() switch
         {
-            "positivo" => "bg-success",
-            "negativo" => "bg-danger",
-            "neutro" => "bg-secondary",
-            _ => "bg-info"
+            "positivo" => "sentiment-positive",
+            "negativo" => "sentiment-negative",
+            "neutro" => "sentiment-neutral",
+            _ => "sentiment-neutral"
         };
     }
 
@@ -364,22 +456,58 @@ else
     {
         return sentiment?.ToLower() switch
         {
-            "positivo" => "bi-emoji-smile",
-            "negativo" => "bi-emoji-frown",
-            "neutro" => "bi-emoji-neutral",
-            _ => "bi-chat-square-text"
+            "positivo" => "bi bi-emoji-smile",
+            "negativo" => "bi bi-emoji-frown",
+            "neutro" => "bi bi-emoji-neutral",
+            _ => "bi bi-chat-square-text"
         };
     }
 }
 
 @section Styles {
     <style>
+        /* ========== VARIABILI E COLORI ========== */
+        :root {
+            --primary-color: #1e88e5;
+            --primary-light: #4b9fea;
+            --primary-dark: #1565c0;
+            --secondary-color: #ff5722;
+            --accent-color: #9c27b0;
+            --success-color: #43a047;
+            --warning-color: #ffb300;
+            --danger-color: #e53935;
+            --light-color: #f5f5f5;
+            --dark-color: #263238;
+            --gray-color: #607d8b;
+            --text-primary: #212121;
+            --text-secondary: #757575;
+            --text-light: #ffffff;
+            --border-radius: 8px;
+            --box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --gradient-primary: linear-gradient(135deg, #1e88e5, #1565c0);
+            --gradient-dark: linear-gradient(135deg, #37474f, #263238);
+        }
+
+        /* ========== RESET E BASE ========== */
+        body {
+            background-color: #f8f9fa;
+            color: var(--text-primary);
+            font-family: 'Roboto', sans-serif;
+        }
+
+        /* ========== CONTENITORI ========== */
+        .movie-details-container {
+            position: relative;
+            min-height: 100vh;
+        }
+
         .backdrop-container {
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
-            height: 500px;
+            height: 100vh;
             overflow: hidden;
             z-index: -1;
         }
@@ -390,7 +518,7 @@ else
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.9) 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(38,50,56,0.95) 100%);
             z-index: 1;
         }
 
@@ -401,30 +529,42 @@ else
         }
 
         .movie-content {
-            padding-top: 2rem;
-            color: #333;
+            position: relative;
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+            color: var(--text-light);
+            z-index: 1;
         }
 
-        .backdrop-container + .movie-content {
-            color: white;
-            padding-top: 3rem;
+        /* ========== POSTER E STATS ========== */
+        .poster-container {
+            position: relative;
+            transition: var(--transition);
+            margin-bottom: 1.5rem;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
         }
 
         .movie-poster {
             width: 100%;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+        }
+
+        .poster-container:hover .movie-poster {
+            transform: scale(1.02);
         }
 
         .no-poster {
             width: 100%;
-            height: 400px;
-            background-color: #e9ecef;
-            color: #6c757d;
+            aspect-ratio: 2/3;
+            background-color: var(--dark-color);
+            color: var(--gray-color);
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 8px;
+            border-radius: var(--border-radius);
         }
 
             .no-poster i {
@@ -432,54 +572,316 @@ else
             }
 
         .verified-badge {
-            margin-top: 1rem;
-            padding: 0.5rem;
-            background-color: rgba(25, 135, 84, 0.1);
-            border: 1px solid rgba(25, 135, 84, 0.2);
-            color: #198754;
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            padding: 0.7rem;
+            background-color: rgba(67, 160, 71, 0.9);
             border-radius: 4px;
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        .movie-title {
-            font-size: 2.5rem;
+            .verified-badge i {
+                color: white;
+            }
+
+        .movie-stats {
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+            .stat-item:last-child {
+                margin-bottom: 0;
+                padding-bottom: 0;
+                border-bottom: none;
+            }
+
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+
+            .stat-icon i {
+                color: white;
+                font-size: 1.2rem;
+            }
+
+        .stat-data {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 1.3rem;
             font-weight: 700;
+            color: white;
+            display: block;
         }
 
-        .movie-meta {
+        .stat-label {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.7);
+            text-transform: uppercase;
+        }
+
+        /* ========== TITOLO E INFORMAZIONI ========== */
+        .movie-title {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 0.2rem;
+            background: linear-gradient(to right, #fff, #e0e0e0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .movie-original-title {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 1.5rem;
+            font-style: italic;
+        }
+
+        .movie-genres {
             display: flex;
             flex-wrap: wrap;
-            gap: 1rem;
-            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
         }
 
-        .rating {
-            font-size: 1.2rem;
+        .genre-badge {
+            padding: 0.4rem 1rem;
+            border-radius: 30px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
+            transition: var(--transition);
+        }
+
+            .genre-badge:hover {
+                background: rgba(255,255,255,0.25);
+                transform: translateY(-2px);
+            }
+
+        /* ========== BUTTONS ========== */
+        .btn-action {
+            display: block;
+            width: 100%;
+            padding: 0.8rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            text-align: center;
+            transition: var(--transition);
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-favorite {
+            background: rgba(229, 57, 53, 0.1);
+            color: #ff7675;
+            border: 1px solid rgba(229, 57, 53, 0.3);
+        }
+
+            .btn-favorite:hover, .btn-favorite.active {
+                background: rgba(229, 57, 53, 0.8);
+                color: white;
+            }
+
+        .btn-watched {
+            background: rgba(67, 160, 71, 0.1);
+            color: #00b894;
+            border: 1px solid rgba(67, 160, 71, 0.3);
+        }
+
+            .btn-watched:hover {
+                background: rgba(67, 160, 71, 0.8);
+                color: white;
+            }
+
+        .btn-primary-action {
+            background: var(--gradient-primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(30, 136, 229, 0.25);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+            .btn-primary-action:hover {
+                box-shadow: 0 6px 12px rgba(30, 136, 229, 0.35);
+                transform: translateY(-2px);
+            }
+
+        .btn-secondary-action {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.7rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+            .btn-secondary-action:hover {
+                background: rgba(255,255,255,0.2);
+            }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            justify-content: center;
+            border-radius: 50%;
+            background: transparent;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            transition: var(--transition);
+            cursor: pointer;
         }
 
-        .review-card {
-            padding: 1rem;
-            border-radius: 8px;
-            background-color: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            .btn-icon:hover {
+                background: rgba(255,255,255,0.1);
+                color: white;
+            }
+
+        /* ========== SEZIONI CONTENUTO ========== */
+        .content-section {
+            background: rgba(255,255,255,0.07);
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: var(--transition);
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+            .content-section.animated {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
-        .backdrop-container + .movie-content .review-card {
-            background-color: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            color: white;
         }
 
+        .section-icon {
+            margin-right: 0.8rem;
+            color: var(--primary-light);
+        }
+
+        .section-content {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .movie-description {
+            font-size: 1.1rem;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .no-content-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: rgba(255,255,255,0.5);
+            text-align: center;
+            background: rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+        }
+
+            .no-content-message i {
+                font-size: 3rem;
+                margin-bottom: 1rem;
+            }
+
+        /* ========== TRAILER ========== */
+        .trailer-container {
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            padding-top: 56.25%; /* Aspect ratio 16:9 */
+        }
+
+            .trailer-container iframe {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border: none;
+            }
+
+        /* ========== ANALISI IA ========== */
+        .ai-analysis {
+            background: rgba(126, 87, 194, 0.05);
+            border-left: 4px solid var(--accent-color);
+            padding: 1rem;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+            line-height: 1.7;
+        }
+
+        /* ========== SISTEMA DI RATING ========== */
         .rating-stars {
             display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
             align-items: center;
-            gap: 0.25rem;
+            margin-bottom: 1rem;
         }
 
             .rating-stars input[type="radio"] {
@@ -490,22 +892,271 @@ else
                 cursor: pointer;
                 width: 30px;
                 height: 30px;
-                background-color: #e4e4e4;
-                color: #333;
-                border-radius: 4px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                transition: all 0.2s;
+                font-size: 1.5rem;
+                color: #ccc;
+                transition: var(--transition);
+                position: relative;
             }
 
-            .rating-stars input[type="radio"]:checked + label {
-                background-color: #ffc107;
+                .rating-stars label:before {
+                    content: '\F588'; /* Codice Bootstrap Icons per stella */
+                    font-family: "bootstrap-icons";
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                }
+
+            .rating-stars input[type="radio"]:checked ~ label:before,
+            .rating-stars input[type="radio"]:checked ~ label:hover:before {
+                color: var(--warning-color);
+            }
+
+            .rating-stars label:hover:before,
+            .rating-stars label:hover ~ label:before {
+                color: var(--warning-color);
+            }
+
+        .rating-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: white;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .modal-rating {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .rating-option {
+            position: relative;
+        }
+
+        .rating-input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .rating-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #f5f5f5;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .rating-input:checked + .rating-label {
+            background: var(--warning-color);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* ========== RECENSIONI ========== */
+        .reviews-count {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.7);
+            margin-left: 0.5rem;
+        }
+
+        .reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .review-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 1.5rem;
+            transition: var(--transition);
+            border-left: 3px solid var(--primary-color);
+        }
+
+            .review-card:hover {
+                background: rgba(255, 255, 255, 0.08);
+                transform: translateX(5px);
+            }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient-dark);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            margin-right: 1rem;
+        }
+
+        .user-details {
+            flex: 1;
+        }
+
+        .review-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+            color: white;
+        }
+
+        .review-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            color: rgba(255,255,255,0.6);
+            font-size: 0.9rem;
+        }
+
+        .author {
+            font-weight: 500;
+        }
+
+        .review-rating {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--warning-color);
+        }
+
+        .review-content {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 1rem;
+        }
+
+        .sentiment-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.3rem 0.8rem;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            gap: 0.4rem;
+        }
+
+        .sentiment-positive {
+            background: rgba(67, 160, 71, 0.2);
+            color: #81c784;
+            border: 1px solid rgba(67, 160, 71, 0.3);
+        }
+
+        .sentiment-negative {
+            background: rgba(229, 57, 53, 0.2);
+            color: #e57373;
+            border: 1px solid rgba(229, 57, 53, 0.3);
+        }
+
+        .sentiment-neutral {
+            background: rgba(96, 125, 139, 0.2);
+            color: #b0bec5;
+            border: 1px solid rgba(96, 125, 139, 0.3);
+        }
+
+        /* ========== MODAL ========== */
+        .modal-content {
+            background: var(--dark-color);
+            color: white;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 1.5rem;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding: 1rem 1.5rem;
+        }
+
+        .form-control {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 0.8rem 1rem;
+        }
+
+            .form-control:focus {
+                background: rgba(255,255,255,0.1);
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 0.25rem rgba(30, 136, 229, 0.25);
                 color: white;
             }
 
-        .ai-analysis-content {
-            line-height: 1.6;
+        .form-label {
+            color: rgba(255,255,255,0.9);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        /* ========== ERROR PAGE ========== */
+        .error-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 3rem;
+            background: var(--gradient-dark);
+            border-radius: var(--border-radius);
+            text-align: center;
+            color: white;
+            box-shadow: var(--box-shadow);
+        }
+
+        .error-icon {
+            font-size: 5rem;
+            color: var(--danger-color);
+            margin-bottom: 2rem;
+        }
+
+        .error-container h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .error-container p {
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            color: rgba(255,255,255,0.7);
         }
     </style>
 }
