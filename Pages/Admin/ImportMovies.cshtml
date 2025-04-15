@@ -1,0 +1,234 @@
+﻿@page
+@model CineVerify.Pages.Admin.ImportMoviesModel
+@{
+    ViewData["Title"] = "Importa Film da TMDB";
+}
+
+<div class="container">
+    <h1 class="my-4">Importa Film da TMDB</h1>
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle-fill me-2"></i> @Model.SuccessMessage
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="alert alert-danger">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @Model.ErrorMessage
+        </div>
+    }
+
+    <!-- Statistiche Film -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i> Statistiche Database</h5>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <div class="p-3">
+                        <h3 class="display-4">@Model.TotalMovies</h3>
+                        <p class="lead mb-0">Film Totali</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3">
+                        <h3 class="display-4">@Model.TotalGenres</h3>
+                        <p class="lead mb-0">Generi Disponibili</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3">
+                        <h3 class="display-4">@Model.TmdbMovies</h3>
+                        <p class="lead mb-0">Film da TMDB</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Importa Film Popolari (più opzioni) -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-star-fill me-2"></i>Importa Film Popolari</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="ImportPopular">
+                        <div class="mb-3">
+                            <label class="form-label">Numero di pagine da importare:</label>
+                            <select class="form-select" name="pages">
+                                <option value="1">1 pagina (20 film)</option>
+                                <option value="2">2 pagine (40 film)</option>
+                                <option value="3" selected>3 pagine (60 film)</option>
+                                <option value="5">5 pagine (100 film)</option>
+                                <option value="10">10 pagine (200 film)</option>
+                            </select>
+                            <div class="form-text">Ogni pagina contiene circa 20 film.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-cloud-download me-2"></i> Importa Film Popolari
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Importa Film per Genere -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-tags-fill me-2"></i>Importa Film per Genere</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" asp-page-handler="ImportByGenre">
+                        <div class="mb-3">
+                            <label class="form-label">Seleziona Genere:</label>
+                            <select class="form-select" name="genreId" required>
+                                @foreach (var genre in Model.Genres)
+                                {
+                                    <option value="@genre.Id">@genre.Name</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Numero di pagine da importare:</label>
+                            <select class="form-select" name="pages">
+                                <option value="1">1 pagina (20 film)</option>
+                                <option value="2" selected>2 pagine (40 film)</option>
+                                <option value="3">3 pagine (60 film)</option>
+                                <option value="5">5 pagine (100 film)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-cloud-download me-2"></i> Importa Film per Genere
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cerca e Importa Film Specifici -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-search me-2"></i>Cerca e Importa Film Specifici</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-page-handler="Search">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="Cerca film..." asp-for="SearchQuery" required>
+                    <button class="btn btn-info" type="submit">
+                        <i class="bi bi-search me-2"></i> Cerca
+                    </button>
+                </div>
+            </form>
+
+            @if (Model.SearchResults.Count > 0)
+            {
+                <h5 class="mt-4 mb-3">Risultati della Ricerca (@Model.SearchResults.Count film)</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Poster</th>
+                                <th>Titolo</th>
+                                <th>Anno</th>
+                                <th>Valutazione</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var movie in Model.SearchResults)
+                            {
+                                <tr>
+                                    <td width="60">
+                                        @if (!string.IsNullOrEmpty(movie.PosterPath))
+                                        {
+                                            <img src="@movie.PosterPath" alt="@movie.Title" style="width: 50px;" />
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center bg-light" style="width: 50px; height: 75px;">
+                                                <i class="bi bi-film"></i>
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>@movie.Title</td>
+                                    <td>@(movie.ReleaseDate?.Year.ToString() ?? "N/A")</td>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-star-fill me-1"></i> @movie.Rating.ToString("0.0")
+                                        </span>
+                                        <small class="text-muted">(@movie.VoteCount voti)</small>
+                                    </td>
+                                    <td>
+                                        <form method="post" asp-page-handler="ImportMovie">
+                                            <input type="hidden" name="tmdbId" value="@movie.TmdbId" />
+                                            <button type="submit" class="btn btn-sm btn-success">
+                                                <i class="bi bi-cloud-download me-1"></i> Importa
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Film Recentemente Importati -->
+    @if (Model.ImportedMovies.Count > 0)
+    {
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-check2-all me-2"></i>Film Recentemente Importati</h5>
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-2 row-cols-md-5 g-3">
+                    @foreach (var movie in Model.ImportedMovies)
+                    {
+                        <div class="col">
+                            <div class="card h-100 shadow-sm">
+                                <div class="position-relative">
+                                    @if (!string.IsNullOrEmpty(movie.PosterPath))
+                                    {
+                                        <img src="@movie.PosterPath" class="card-img-top" alt="@movie.Title">
+                                    }
+                                    else
+                                    {
+                                        <div class="card-img-top text-center bg-light p-4">
+                                            <i class="bi bi-film" style="font-size: 3rem;"></i>
+                                        </div>
+                                    }
+                                    <div class="position-absolute top-0 end-0 m-2">
+                                        <span class="badge bg-warning text-dark">
+                                            <i class="bi bi-star-fill me-1"></i> @movie.Rating.ToString("0.0")
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title text-truncate" title="@movie.Title">@movie.Title</h6>
+                                    <p class="card-text small text-muted mb-0">
+                                        @(movie.ReleaseDate?.Year.ToString() ?? "N/A")
+                                    </p>
+                                </div>
+                                <div class="card-footer bg-white">
+                                    <a asp-page="/Movies/Details" asp-route-id="@movie.Id" class="btn btn-sm btn-outline-primary w-100">
+                                        <i class="bi bi-eye me-1"></i> Dettagli
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

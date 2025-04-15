@@ -1,0 +1,153 @@
+﻿@page
+@model CineVerify.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Dashboard Amministrazione";
+}
+
+<div class="container my-4">
+    <h1 class="mb-4"><i class="bi bi-speedometer2 me-2"></i>Dashboard Amministrazione</h1>
+
+    <div class="row">
+        <!-- Card Statistiche Film -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-primary h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-film me-2"></i>Gestione Film</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">@Model.TotalMovies</h3>
+                    <p class="card-text">Film nel database</p>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a asp-page="/Admin/ImportMovies" class="btn btn-outline-primary">
+                            <i class="bi bi-cloud-download me-2"></i>Importa Film
+                        </a>
+                        <a asp-page="/Movies/Index" class="btn btn-outline-primary">
+                            <i class="bi bi-list me-2"></i>Gestisci Film
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Gestione Utenti -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-success h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Gestione Utenti</h5>
+                </div>
+                <div class="card-body">
+                    <h3 class="card-title">@Model.TotalUsers</h3>
+                    <p class="card-text">Utenti registrati</p>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a asp-page="/Admin/Users" class="btn btn-outline-success">
+                            <i class="bi bi-person-fill-gear me-2"></i>Gestisci Utenti
+                        </a>
+                        <a asp-page="/Admin/Roles" class="btn btn-outline-success">
+                            <i class="bi bi-shield me-2"></i>Gestisci Ruoli
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Operazioni Avanzate -->
+        <div class="col-md-4 mb-4">
+            <div class="card border-danger h-100">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Operazioni Avanzate</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Funzionalità avanzate di amministrazione del sistema</p>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a asp-page="/Admin/Reviews" class="btn btn-outline-danger">
+                            <i class="bi bi-star me-2"></i>Gestisci Recensioni
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#clearCacheModal">
+                            <i class="bi bi-trash me-2"></i>Svuota Cache
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiche Generali -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Panoramica del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-light shadow-sm">
+                                <div class="card-body">
+                                    <h1 class="display-5 text-primary">@Model.TotalMovies</h1>
+                                    <p class="lead">Film</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-light shadow-sm">
+                                <div class="card-body">
+                                    <h1 class="display-5 text-success">@Model.TotalUsers</h1>
+                                    <p class="lead">Utenti</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-light shadow-sm">
+                                <div class="card-body">
+                                    <h1 class="display-5 text-info">@Model.TotalReviews</h1>
+                                    <p class="lead">Recensioni</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="card border-light shadow-sm">
+                                <div class="card-body">
+                                    <h1 class="display-5 text-warning">@Model.TotalGenres</h1>
+                                    <p class="lead">Generi</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Link diretto per importare più film -->
+    <div class="mt-4">
+        <div class="d-grid gap-2 col-md-6 mx-auto">
+            <a asp-page="/Admin/ImportMovies" class="btn btn-lg btn-primary">
+                <i class="bi bi-cloud-download me-2"></i>Importa Più Film da TMDB
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Svuota Cache -->
+<div class="modal fade" id="clearCacheModal" tabindex="-1" aria-labelledby="clearCacheModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="clearCacheModalLabel"><i class="bi bi-exclamation-triangle me-2"></i>Svuota Cache</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sei sicuro di voler svuotare la cache del sistema? Questa operazione potrebbe rallentare temporaneamente l'applicazione.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <form method="post" asp-page-handler="ClearCache">
+                    <button type="submit" class="btn btn-danger">Svuota Cache</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

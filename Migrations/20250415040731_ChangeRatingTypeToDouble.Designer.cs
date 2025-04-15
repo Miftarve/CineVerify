@@ -3,6 +3,7 @@ using System;
 using CineVerify.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CineVerify.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250415040731_ChangeRatingTypeToDouble")]
+    partial class ChangeRatingTypeToDouble
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.3");
@@ -199,6 +202,9 @@ namespace CineVerify.Migrations
                     b.Property<int>("MovieId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("MovieId1")
+                        .HasColumnType("INTEGER");
+
                     b.Property<decimal>("Rating")
                         .HasColumnType("REAL");
 
@@ -220,6 +226,8 @@ namespace CineVerify.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("MovieId");
+
+                    b.HasIndex("MovieId1");
 
                     b.HasIndex("UserId");
 
@@ -252,33 +260,21 @@ namespace CineVerify.Migrations
 
             modelBuilder.Entity("CineVerify.Models.MovieWatchHistory", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("ApplicationUserId")
+                    b.Property<string>("UserId")
                         .HasColumnType("TEXT");
-
-                    b.Property<bool>("Completed")
-                        .HasColumnType("INTEGER");
 
                     b.Property<int>("MovieId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
+                    b.Property<int>("Id")
+                        .HasColumnType("INTEGER");
 
                     b.Property<DateTime>("WatchedAt")
                         .HasColumnType("TEXT");
 
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationUserId");
+                    b.HasKey("UserId", "MovieId");
 
                     b.HasIndex("MovieId");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("MovieWatchHistory");
                 });
@@ -379,11 +375,9 @@ namespace CineVerify.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderKey")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("ProviderDisplayName")
@@ -421,11 +415,9 @@ namespace CineVerify.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(128)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Value")
@@ -438,15 +430,22 @@ namespace CineVerify.Migrations
 
             modelBuilder.Entity("CineVerify.Models.MovieReview", b =>
                 {
-                    b.HasOne("CineVerify.Models.Movie", "Movie")
+                    b.HasOne("CineVerify.Models.Movie", null)
                         .WithMany()
                         .HasForeignKey("MovieId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("CineVerify.Models.Movie", "Movie")
+                        .WithMany()
+                        .HasForeignKey("MovieId1")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("CineVerify.Models.ApplicationUser", "User")
                         .WithMany("Reviews")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Movie");
 
@@ -474,10 +473,6 @@ namespace CineVerify.Migrations
 
             modelBuilder.Entity("CineVerify.Models.MovieWatchHistory", b =>
                 {
-                    b.HasOne("CineVerify.Models.ApplicationUser", null)
-                        .WithMany("WatchHistory")
-                        .HasForeignKey("ApplicationUserId");
-
                     b.HasOne("CineVerify.Models.Movie", "Movie")
                         .WithMany()
                         .HasForeignKey("MovieId")
@@ -485,7 +480,7 @@ namespace CineVerify.Migrations
                         .IsRequired();
 
                     b.HasOne("CineVerify.Models.ApplicationUser", "User")
-                        .WithMany()
+                        .WithMany("WatchHistory")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

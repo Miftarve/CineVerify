@@ -6,13 +6,14 @@ namespace CineVerify.Models
 {
     public class ApplicationUser : IdentityUser
     {
-        // Usiamo direttamente i nomi in italiano per compatibilità con il codice esistente
-        public string Nome { get; set; }
-        public string Cognome { get; set; }
+        public string Nome { get; set; } = string.Empty;
+
+        public string Cognome { get; set; } = string.Empty;
+
         public DateTime DataRegistrazione { get; set; } = DateTime.UtcNow;
 
-        // Proprietà aggiuntive in inglese
-        public string ProfilePictureUrl { get; set; }
+        // Con valore predefinito per evitare l'errore NOT NULL
+        public string ProfilePictureUrl { get; set; } = "/images/default-avatar.png";
         public bool IsCritic { get; set; } = false;
 
         // Proprietà di compatibilità per codice inglese

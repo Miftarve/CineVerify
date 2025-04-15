@@ -16,7 +16,11 @@ namespace CineVerify.Services
         public GeminiService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient;
-            _apiKey = configuration["GeminiApi:ApiKey"];
+            _apiKey = configuration["GeminiApi:ApiKey"] ?? throw new InvalidOperationException("API key for Gemini not configured");
+
+            // Configurazione opzionale (se non usi AddHttpClient<GeminiService> nel Program.cs)
+            _httpClient.BaseAddress = new Uri("https://generativelanguage.googleapis.com/");
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
         }
 
         public async Task<string> GeneratePersonalizedRecommendationsAsync(

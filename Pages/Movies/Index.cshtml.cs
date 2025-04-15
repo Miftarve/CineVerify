@@ -1,6 +1,5 @@
 using CineVerify.Data;
 using CineVerify.Models;
-using CineVerify.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -13,78 +12,74 @@ namespace CineVerify.Pages.Movies
     public class IndexModel : PageModel
     {
         private readonly ApplicationDbContext _context;
-        private readonly MovieApiService _movieApiService;
+        private readonly int _pageSize = 500; 
 
-        public IndexModel(ApplicationDbContext context, MovieApiService movieApiService)
+        public IndexModel(ApplicationDbContext context)
         {
             _context = context;
-            _movieApiService = movieApiService;
         }
 
-        public List<Movie> Movies { get; set; } = new List<Movie>();
-        public string SearchQuery { get; set; }
-        public int CurrentPage { get; set; } = 1;
-        public int TotalPages { get; set; } = 1;
-        public int PageSize { get; set; } = 12;
+        public PaginatedList<Movie> Movies { get; set; } = null!;
+        public List<string> AvailableGenres { get; set; } = new List<string>();
 
-        public async Task OnGetAsync(string searchQuery = "", int p = 1)
+        [BindProperty(SupportsGet = true)]
+        public string SearchQuery { get; set; } = string.Empty;
+
+        [BindProperty(SupportsGet = true)]
+        public string GenreFilter { get; set; } = string.Empty;
+
+        public async Task<IActionResult> OnGetAsync(int? pageIndex)
         {
-            SearchQuery = searchQuery;
-            CurrentPage = p < 1 ? 1 : p;
+            // 1. Prima carica tutti i film dal database per elaborare i generi
+            var allMovies = await _context.Movies.AsNoTracking().ToListAsync();
 
-            var query = _context.Movies.AsQueryable();
+            // 2. Estrai i generi lato client
+            AvailableGenres = allMovies
+                .Where(m => m.Genres != null && m.Genres.Length > 0)
+                .SelectMany(m => m.Genres)
+                .Distinct()
+                .OrderBy(g => g)
+                .ToList();
 
+            // 3. Query base per i film da visualizzare
+            var movieQuery = _context.Movies.AsQueryable();
+
+            // 4. Applica i filtri di base che EF Core può gestire
             if (!string.IsNullOrEmpty(SearchQuery))
             {
-                // Ricerca per titolo
-                query = query.Where(m => m.Title.Contains(SearchQuery) ||
-                                         m.OriginalTitle.Contains(SearchQuery));
+                movieQuery = movieQuery.Where(m =>
+                    m.Title.Contains(SearchQuery) ||
+                    m.OriginalTitle.Contains(SearchQuery) ||
+                    m.Description.Contains(SearchQuery));
             }
 
-            // Calcola il numero totale di pagine
-            var totalCount = await query.CountAsync();
-            TotalPages = (totalCount + PageSize - 1) / PageSize;
+            // 5. Carica i risultati nel client per applicare filtri complessi
+            var filteredMovies = await movieQuery.ToListAsync();
 
-            // Imposta il numero di pagina corrente nei limiti consentiti
-            if (CurrentPage > TotalPages && TotalPages > 0)
+            // 6. Applica il filtro per genere lato client
+            if (!string.IsNullOrEmpty(GenreFilter))
             {
-                CurrentPage = TotalPages;
+                filteredMovies = filteredMovies
+                    .Where(m => m.Genres != null && m.Genres.Contains(GenreFilter))
+                    .ToList();
             }
 
-            // Ottieni i film per la pagina corrente
-            Movies = await query
-                .OrderByDescending(m => m.DateAdded)
-                .Skip((CurrentPage - 1) * PageSize)
-                .Take(PageSize)
-                .ToListAsync();
+            // 7. Ordina i risultati
+            filteredMovies = filteredMovies.OrderByDescending(m => m.DateAdded).ToList();
 
-            // Se non ci sono film nel database e stiamo cercando, prova a cercare tramite API
-            if (Movies.Count == 0 && !string.IsNullOrEmpty(SearchQuery))
-            {
-                var apiMovies = await _movieApiService.SearchMoviesAsync(SearchQuery);
+            // 8. Crea una lista paginata manualmente
+            int totalItems = filteredMovies.Count;
+            pageIndex = pageIndex ?? 1;
+            int totalPages = (int)Math.Ceiling(totalItems / (double)_pageSize);
 
-                // Salva i risultati nel database
-                foreach (var movie in apiMovies)
-                {
-                    // Verifica se il film esiste già nel database
-                    var existingMovie = await _context.Movies
-                        .FirstOrDefaultAsync(m => m.TmdbId == movie.TmdbId);
+            var paginatedMovies = filteredMovies
+                .Skip((pageIndex.Value - 1) * _pageSize)
+                .Take(_pageSize)
+                .ToList();
 
-                    if (existingMovie == null)
-                    {
-                        _context.Movies.Add(movie);
-                    }
-                }
+            Movies = new PaginatedList<Movie>(paginatedMovies, totalItems, pageIndex.Value, _pageSize);
 
-                await _context.SaveChangesAsync();
-
-                // Riprova la query per includere i nuovi film
-                Movies = await query
-                    .OrderByDescending(m => m.DateAdded)
-                    .Skip((CurrentPage - 1) * PageSize)
-                    .Take(PageSize)
-                    .ToListAsync();
-            }
+            return Page();
         }
     }
 }

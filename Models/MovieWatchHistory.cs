@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace CineVerify.Models
 {
@@ -6,12 +7,18 @@ namespace CineVerify.Models
     {
         public int Id { get; set; }
 
-        public int MovieId { get; set; }
-        public virtual Movie Movie { get; set; }
+        [Required]
+        public string UserId { get; set; } = string.Empty;
 
-        public string UserId { get; set; }
-        public virtual ApplicationUser User { get; set; }
+        [Required]
+        public int MovieId { get; set; }
 
         public DateTime WatchedAt { get; set; } = DateTime.UtcNow;
+
+        public bool Completed { get; set; }
+
+        // Proprietà di navigazione
+        public virtual Movie Movie { get; set; } = null!;
+        public virtual ApplicationUser User { get; set; } = null!;
     }
 }

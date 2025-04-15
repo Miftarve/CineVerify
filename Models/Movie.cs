@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
 
 namespace CineVerify.Models
 {
@@ -26,7 +27,6 @@ namespace CineVerify.Models
 
         public DateTime DateAdded { get; set; } = DateTime.UtcNow;
 
-        // Nota: non usiamo Column(TypeName="decimal(3,1)") in quanto SQLite lo supporta in modo diverso
         public decimal Rating { get; set; }
 
         public int VoteCount { get; set; }
@@ -42,6 +42,22 @@ namespace CineVerify.Models
         public string[] Genres { get; set; } = Array.Empty<string>();
 
         public string GeminiAnalysis { get; set; } = string.Empty;
+
+        // Proprietà calcolata per l'URL completo del poster
+        [NotMapped]
+        public string FullPosterUrl => string.IsNullOrEmpty(PosterPath)
+            ? string.Empty
+            : PosterPath.StartsWith("http")
+                ? PosterPath
+                : $"https://image.tmdb.org/t/p/w500{PosterPath}";
+
+        // Proprietà calcolata per l'URL completo dello sfondo
+        [NotMapped]
+        public string FullBackdropUrl => string.IsNullOrEmpty(BackdropPath)
+            ? string.Empty
+            : BackdropPath.StartsWith("http")
+                ? BackdropPath
+                : $"https://image.tmdb.org/t/p/original{BackdropPath}";
 
         // Proprietà di supporto per verificare se le immagini sono disponibili
         [NotMapped]

@@ -19,230 +19,193 @@ namespace CineVerify.Pages
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly GeminiService _geminiService;
+        private readonly MovieApiService _movieApiService;
 
         public IndexModel(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
-            GeminiService geminiService)
+            GeminiService geminiService,
+            MovieApiService movieApiService)
         {
             _context = context;
             _userManager = userManager;
             _geminiService = geminiService;
+            _movieApiService = movieApiService;
         }
 
         public List<Movie> LatestMovies { get; set; } = new List<Movie>();
         public List<Movie> TopRatedMovies { get; set; } = new List<Movie>();
         public List<Movie> RecommendedMovies { get; set; } = new List<Movie>();
 
+        // Dizionario per tenere traccia dei film che non sono ancora nel database
+        public Dictionary<int, int> TmdbMovieIds { get; set; } = new Dictionary<int, int>();
+
         public string RecommendationText { get; set; } = string.Empty;
         public bool HasRecommendations { get; set; } = false;
+        public string ErrorMessage { get; set; } = string.Empty;
 
         public async Task OnGetAsync()
         {
-            // Ottieni i film più recenti
-            LatestMovies = await _context.Movies
-                .OrderByDescending(m => m.ReleaseDate)
-                .Take(4)
-                .ToListAsync();
-
-            // Ottieni i film con valutazione più alta
-            TopRatedMovies = await _context.Movies
-                .Where(m => m.VoteCount > 5) // Solo film con abbastanza voti
-                .OrderByDescending(m => m.Rating)
-                .Take(4)
-                .ToListAsync();
-
-            // Per le raccomandazioni personalizzate
-            var currentUser = await _userManager.GetUserAsync(User);
-            if (currentUser != null)
+            try
             {
-                // Ottieni film che l'utente potrebbe apprezzare basandosi sui suoi preferiti e valutazioni
-                var favoriteMovies = await _context.UserFavorites
-                    .Where(f => f.UserId == currentUser.Id)
-                    .Include(f => f.Movie)
-                    .Select(f => f.Movie)
-                    .ToListAsync();
-
-                var userRatings = await _context.MovieUserRatings
-                    .Where(r => r.UserId == currentUser.Id && r.Rating >= 7) // Solo rating positivi
-                    .Include(r => r.Movie)
-                    .Select(r => r.Movie)
-                    .ToListAsync();
-
-                // Raccogli i generi preferiti dell'utente
-                var favoriteGenres = new HashSet<string>();
-
-                foreach (var movie in favoriteMovies.Concat(userRatings))
+                // Ottieni i film popolari da TMDB API prima di tutto
+                var tmdbMovies = new List<Movie>();
+                try
                 {
-                    if (movie.Genres != null && movie.Genres.Length > 0)
+                    tmdbMovies = await _movieApiService.GetPopularMoviesAsync(1);
+
+                    // Importa automaticamente alcuni film TMDB se il database è quasi vuoto
+                    var dbMovieCount = await _context.Movies.CountAsync();
+                    if (dbMovieCount < 10)
                     {
-                        foreach (var genre in movie.Genres)
-                        {
-                            favoriteGenres.Add(genre);
-                        }
+                        await _movieApiService.ImportPopularMoviesToDbAsync(10);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Errore durante il recupero dei film TMDB: {ex.Message}");
+                    ErrorMessage = "Impossibile recuperare alcuni film da TMDB API";
+                }
+
+                // Ottieni i film dal database
+                var dbMovies = await _context.Movies.ToListAsync();
+
+                // Combina i film TMDB con quelli del database per i film più recenti
+                // Prima salva i TMDB ID dei film che non sono ancora nel database
+                foreach (var tmdbMovie in tmdbMovies)
+                {
+                    if (!dbMovies.Any(m => m.TmdbId == tmdbMovie.TmdbId))
+                    {
+                        TmdbMovieIds[tmdbMovie.TmdbId] = tmdbMovie.TmdbId;
                     }
                 }
 
-                // Se abbiamo alcuni generi preferiti, cerca film simili
-                if (favoriteGenres.Any())
+                // Film più recenti - combina database e TMDB
+                var allRecentMovies = new List<Movie>();
+                allRecentMovies.AddRange(dbMovies);
+
+                // Aggiungi solo film TMDB che non sono già nel database
+                foreach (var tmdbMovie in tmdbMovies)
                 {
-                    // Film che l'utente non ha ancora valutato o aggiunto ai preferiti
-                    var ratedMovieIds = userRatings.Select(m => m.Id).ToHashSet();
-                    var favoriteMovieIds = favoriteMovies.Select(m => m.Id).ToHashSet();
-                    var excludedMovieIds = ratedMovieIds.Union(favoriteMovieIds).ToHashSet();
-
-                    // Trova film con generi simili
-                    RecommendedMovies = new List<Movie>();
-                    var allMovies = await _context.Movies.ToListAsync();
-
-                    foreach (var movie in allMovies)
+                    if (!dbMovies.Any(m => m.TmdbId == tmdbMovie.TmdbId))
                     {
-                        if (excludedMovieIds.Contains(movie.Id))
-                            continue;
+                        allRecentMovies.Add(tmdbMovie);
+                    }
+                }
 
+                LatestMovies = allRecentMovies
+                    .OrderByDescending(m => m.ReleaseDate)
+                    .Take(8)
+                    .ToList();
+
+                // Film con valutazione più alta
+                TopRatedMovies = allRecentMovies
+                    .Where(m => m.VoteCount > 5)
+                    .OrderByDescending(m => m.Rating)
+                    .Take(4)
+                    .ToList();
+
+                // Per le raccomandazioni personalizzate
+                var currentUser = await _userManager.GetUserAsync(User);
+                if (currentUser != null)
+                {
+                    // Ottieni film che l'utente potrebbe apprezzare basandosi sui suoi preferiti e valutazioni
+                    var favoriteMovies = await _context.UserFavorites
+                        .Where(f => f.UserId == currentUser.Id)
+                        .Include(f => f.Movie)
+                        .Select(f => f.Movie)
+                        .ToListAsync();
+
+                    var userRatings = await _context.MovieUserRatings
+                        .Where(r => r.UserId == currentUser.Id && r.Rating >= 7) // Solo rating positivi
+                        .Include(r => r.Movie)
+                        .Select(r => r.Movie)
+                        .ToListAsync();
+
+                    // Raccogli i generi preferiti dell'utente
+                    var favoriteGenres = new HashSet<string>();
+
+                    foreach (var movie in favoriteMovies.Concat(userRatings))
+                    {
                         if (movie.Genres != null && movie.Genres.Length > 0)
                         {
-                            if (movie.Genres.Any(g => favoriteGenres.Contains(g)))
+                            foreach (var genre in movie.Genres)
                             {
-                                RecommendedMovies.Add(movie);
-                                if (RecommendedMovies.Count >= 4)
-                                    break;
+                                favoriteGenres.Add(genre);
                             }
                         }
                     }
 
-                    // Se abbiamo raccomandazioni o abbastanza dati dell'utente, chiedi a Gemini di generare consigli personalizzati
-                    if ((favoriteMovies.Count + userRatings.Count) >= 3)
+                    // Se abbiamo alcuni generi preferiti, cerca film simili
+                    if (favoriteGenres.Any())
                     {
-                        HasRecommendations = true;
+                        // Film che l'utente non ha ancora valutato o aggiunto ai preferiti
+                        var ratedMovieIds = userRatings.Select(m => m.Id).ToHashSet();
+                        var favoriteMovieIds = favoriteMovies.Select(m => m.Id).ToHashSet();
+                        var excludedMovieIds = ratedMovieIds.Union(favoriteMovieIds).ToHashSet();
 
-                        var favoriteMovieTitles = favoriteMovies.Select(m => m.Title).Take(5).ToArray();
-                        var ratedMovieTitles = userRatings.Select(m => m.Title).Take(5).ToArray();
-                        var userRatingValues = await _context.MovieUserRatings
-                            .Where(r => r.UserId == currentUser.Id)
-                            .OrderByDescending(r => r.DateRated)
-                            .Take(5)
-                            .Select(r => (int)r.Rating)
-                            .ToArrayAsync();
+                        // Trova film con generi simili (inclusi quelli TMDB)
+                        RecommendedMovies = new List<Movie>();
 
-                        try
+                        foreach (var movie in allRecentMovies)
                         {
-                            // Genera consigli solo se non li abbiamo già
-                            var userRecommendationKey = $"user_recommendation_{currentUser.Id}";
-                            var recommendationTimestampKey = $"recommendation_timestamp_{currentUser.Id}";
+                            // Per i film del database, controllo ID
+                            if (movie.Id > 0 && excludedMovieIds.Contains(movie.Id))
+                                continue;
 
-                            // Verifica se c'è una raccomandazione recente (meno di 24 ore)
-                            var timestampStr = await _context.UserFavorites
-                                .Where(f => f.UserId == userRecommendationKey)
-                                .Select(f => f.DateAdded.ToString())
-                                .FirstOrDefaultAsync();
-
-                            bool needsNewRecommendation = true;
-
-                            if (!string.IsNullOrEmpty(timestampStr) &&
-                                DateTime.TryParse(timestampStr, out DateTime timestamp))
+                            if (movie.Genres != null && movie.Genres.Length > 0)
                             {
-                                // Se la raccomandazione è stata generata nelle ultime 24 ore, non rigenerarla
-                                if ((DateTime.UtcNow - timestamp).TotalHours < 24)
+                                if (movie.Genres.Any(g => favoriteGenres.Contains(g)))
                                 {
-                                    needsNewRecommendation = false;
-
-                                    // Recupera la raccomandazione salvata
-                                    var savedRecommendation = await _context.MovieReviews
-                                        .Where(r => r.UserId == userRecommendationKey)
-                                        .Select(r => r.Content)
-                                        .FirstOrDefaultAsync();
-
-                                    if (!string.IsNullOrEmpty(savedRecommendation))
-                                    {
-                                        RecommendationText = savedRecommendation;
-                                    }
-                                    else
-                                    {
-                                        // Se c'è un timestamp ma non il testo, rigenerare
-                                        needsNewRecommendation = true;
-                                    }
+                                    RecommendedMovies.Add(movie);
+                                    if (RecommendedMovies.Count >= 4)
+                                        break;
                                 }
                             }
-
-                            if (needsNewRecommendation)
-                            {
-                                // Genera nuovi consigli
-                                RecommendationText = await _geminiService.GeneratePersonalizedRecommendationsAsync(
-                                    currentUser.Id,
-                                    favoriteGenres.ToArray(),
-                                    favoriteMovieTitles.Concat(ratedMovieTitles).Distinct().ToArray(),
-                                    userRatingValues
-                                );
-
-                                // Salva la raccomandazione
-                                var existingRecommendation = await _context.MovieReviews
-                                    .FirstOrDefaultAsync(r => r.UserId == userRecommendationKey);
-
-                                if (existingRecommendation != null)
-                                {
-                                    existingRecommendation.Content = RecommendationText;
-                                    existingRecommendation.DateCreated = DateTime.UtcNow;
-                                }
-                                else
-                                {
-                                    // Crea un record nella tabella MovieReviews per memorizzare le raccomandazioni
-                                    // Usiamo un MovieId = 1 solo come segnaposto
-                                    var recommendationRecord = new MovieReview
-                                    {
-                                        UserId = userRecommendationKey,
-                                        MovieId = 1, // Usa l'ID del primo film o crea un film speciale
-                                        Content = RecommendationText,
-                                        Title = "Consigli Personalizzati",
-                                        Rating = 0,
-                                        DateCreated = DateTime.UtcNow
-                                    };
-                                    _context.MovieReviews.Add(recommendationRecord);
-                                }
-
-                                // Aggiorna il timestamp
-                                var existingTimestamp = await _context.UserFavorites
-                                    .FirstOrDefaultAsync(f => f.UserId == userRecommendationKey);
-
-                                if (existingTimestamp != null)
-                                {
-                                    existingTimestamp.DateAdded = DateTime.UtcNow;
-                                }
-                                else
-                                {
-                                    // Crea un record nella tabella UserFavorites per memorizzare il timestamp
-                                    // Usiamo un MovieId = 1 solo come segnaposto
-                                    var timestampRecord = new UserFavorite
-                                    {
-                                        UserId = userRecommendationKey,
-                                        MovieId = 1, // Usa l'ID del primo film o crea un film speciale
-                                        DateAdded = DateTime.UtcNow
-                                    };
-                                    _context.UserFavorites.Add(timestampRecord);
-                                }
-
-                                await _context.SaveChangesAsync();
-                            }
-                        }
-                        catch (Exception)
-                        {
-                            // Se c'è un errore nel generare consigli, mostriamo solo film simili
                         }
                     }
                 }
-            }
 
-            // Se non abbiamo trovato raccomandazioni, mostra film casuali
-            if (RecommendedMovies.Count == 0)
+                // Se non abbiamo trovato raccomandazioni, mostra film casuali
+                if (RecommendedMovies.Count == 0)
+                {
+                    var random = new Random();
+                    RecommendedMovies = allRecentMovies
+                        .OrderBy(x => random.Next())
+                        .Take(4)
+                        .ToList();
+                }
+            }
+            catch (Exception ex)
             {
-                var random = new Random();
-                var allMovieIds = await _context.Movies.Select(m => m.Id).ToListAsync();
-                var randomMovieIds = allMovieIds.OrderBy(x => random.Next()).Take(4).ToList();
-
-                RecommendedMovies = await _context.Movies
-                    .Where(m => randomMovieIds.Contains(m.Id))
-                    .ToListAsync();
+                Console.WriteLine($"Errore generale nella pagina Index: {ex.Message}");
+                ErrorMessage = "Si è verificato un errore nel caricamento dei film";
             }
+        }
+
+        public async Task<IActionResult> OnPostImportAndViewAsync(int tmdbId)
+        {
+            try
+            {
+                // Importa il film nel database
+                await _movieApiService.ImportMovieToDbAsync(tmdbId);
+
+                // Trova il film appena importato
+                var movie = await _context.Movies.FirstOrDefaultAsync(m => m.TmdbId == tmdbId);
+
+                if (movie != null)
+                {
+                    // Reindirizza alla pagina dettagli
+                    return RedirectToPage("/Movies/Details", new { id = movie.Id });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Errore durante l'importazione e visualizzazione del film: {ex.Message}");
+            }
+
+            // In caso di errore, torna alla home page
+            return RedirectToPage("/Index");
         }
     }
 }

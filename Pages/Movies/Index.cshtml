@@ -1,57 +1,50 @@
 ﻿@page
 @model CineVerify.Pages.Movies.IndexModel
 @{
-    ViewData["Title"] = "Film";
+    ViewData["Title"] = "Tutti i Film";
 }
 
-<div class="container movie-list-container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-4 text-primary">@ViewData["Title"]</h1>
-        <div class="search-container">
-            <form method="get" class="d-flex">
-                <input type="text" name="searchQuery" class="form-control" placeholder="Cerca film..." value="@Model.SearchQuery" />
-                <button type="submit" class="btn btn-primary ms-2">
-                    <i class="bi bi-search"></i>
-                </button>
+<div class="container mt-4">
+    <!-- Filtri e Ricerca -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-5">
+                    <div class="input-group">
+                        <input type="text" class="form-control" name="SearchQuery" value="@Model.SearchQuery" placeholder="Cerca film...">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <select class="form-select" name="GenreFilter" onchange="this.form.submit()">
+                        <option value="">Tutti i generi</option>
+                        @foreach (var genre in Model.AvailableGenres)
+                        {
+                            <option value="@genre" selected="@(Model.GenreFilter == genre)">@genre</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtra</button>
+                </div>
             </form>
         </div>
     </div>
 
-    @if (!string.IsNullOrEmpty(TempData["Message"] as string))
-    {
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            @TempData["Message"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    }
 
-    @if (!string.IsNullOrEmpty(Model.SearchQuery))
-    {
-        <div class="alert alert-light">
-            Risultati per: <strong>@Model.SearchQuery</strong>
-            <a asp-page="./Index" class="float-end">Azzera ricerca</a>
-        </div>
-    }
-
-    @if (!Model.Movies.Any())
-    {
-        <div class="alert alert-warning">
-            @(string.IsNullOrEmpty(Model.SearchQuery)
-                ? "Nessun film disponibile. Prova a cercare film da aggiungere."
-                : "Nessun risultato trovato per la tua ricerca.")
-        </div>
-    }
-    else
-    {
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
-            @foreach (var movie in Model.Movies)
-            {
-                <div class="col">
-                    <div class="card movie-card h-100">
+    <!-- Risultati -->
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-6 g-3">
+        @foreach (var movie in Model.Movies)
+        {
+            <div class="col">
+                <div class="movie-card">
+                    <a asp-page="./Details" asp-route-id="@movie.Id" class="text-decoration-none">
                         <div class="movie-poster">
                             @if (!string.IsNullOrEmpty(movie.PosterPath))
                             {
-                                <img src="@movie.PosterPath" class="card-img-top" alt="@movie.Title" />
+                                <img src="@movie.PosterPath" alt="@movie.Title" class="img-fluid" />
                             }
                             else
                             {
@@ -59,109 +52,131 @@
                                     <i class="bi bi-film"></i>
                                 </div>
                             }
+                            <div class="movie-rating">
+                                <span><i class="bi bi-star-fill me-1"></i>@movie.Rating.ToString("0.0")</span>
+                            </div>
+
+                            <!-- Aggiungiamo il pulsante di overlay al passaggio del mouse -->
                             <div class="movie-overlay">
-                                <a asp-page="./Details" asp-route-id="@movie.Id" class="btn btn-sm btn-primary">
-                                    <i class="bi bi-info-circle"></i> Dettagli
-                                </a>
+                                <button class="btn btn-light btn-sm">
+                                    <i class="bi bi-eye me-1"></i>Visualizza Dettagli
+                                </button>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h5 class="card-title">@movie.Title</h5>
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div class="rating-badge">
-                                    <i class="bi bi-star-fill text-warning"></i>
-                                    <span>@movie.Rating.ToString("F1")</span>
-                                </div>
-                                <small class="text-muted">
-                                    @(movie.ReleaseDate?.Year ?? 0)
-                                </small>
-                            </div>
+                    </a>
+                    <div class="movie-info">
+                        <h5 class="movie-title">
+                            <a asp-page="./Details" asp-route-id="@movie.Id">@movie.Title</a>
+                        </h5>
+                        <div class="movie-year">
+                            @(movie.ReleaseDate?.Year.ToString() ?? "N/A")
                             @if (movie.IsVerified)
                             {
-                                <div class="verified-badge mt-2">
-                                    <i class="bi bi-patch-check-fill"></i> Verificato
-                                </div>
+                                <span class="verified-badge ms-2" title="Film verificato"><i class="bi bi-patch-check-fill"></i></span>
+                            }
+                        </div>
+                        <div class="movie-genres small text-muted">
+                            @if (movie.Genres != null && movie.Genres.Length > 0)
+                            {
+                                @string.Join(" • ", movie.Genres.Take(2))
                             }
                         </div>
                     </div>
                 </div>
-            }
-        </div>
+            </div>
+        }
+    </div>
 
-        <div class="d-flex justify-content-center mt-4">
-            <nav aria-label="Paginazione film">
-                <ul class="pagination">
-                    @for (int i = 1; i <= Model.TotalPages; i++)
-                    {
-                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                            <a class="page-link" asp-page="./Index" asp-route-p="@i" asp-route-searchQuery="@Model.SearchQuery">
-                                @i
-                            </a>
-                        </li>
-                    }
-                </ul>
-            </nav>
+    @if (!Model.Movies.Any())
+    {
+        <div class="alert alert-info text-center my-5">
+            <i class="bi bi-info-circle me-2"></i> Nessun film trovato con i criteri di ricerca specificati.
         </div>
     }
+
+    <!-- Paginazione -->
+    @{
+        var prevDisabled = !Model.Movies.HasPreviousPage ? "disabled" : "";
+        var nextDisabled = !Model.Movies.HasNextPage ? "disabled" : "";
+    }
+
+    <nav aria-label="Navigazione pagine" class="my-4">
+        <ul class="pagination justify-content-center">
+            <li class="page-item @prevDisabled">
+                <a class="page-link" asp-page="./Index"
+                   asp-route-pageIndex="@(Model.Movies.PageIndex - 1)"
+                   asp-route-searchQuery="@Model.SearchQuery"
+                   asp-route-genreFilter="@Model.GenreFilter">
+                    <i class="bi bi-chevron-left"></i> Precedente
+                </a>
+            </li>
+
+            @for (int i = 1; i <= Model.Movies.TotalPages; i++)
+            {
+                <li class="page-item @(i == Model.Movies.PageIndex ? "active" : "")">
+                    <a class="page-link" asp-page="./Index"
+                       asp-route-pageIndex="@i"
+                       asp-route-searchQuery="@Model.SearchQuery"
+                       asp-route-genreFilter="@Model.GenreFilter">
+                        @i
+                    </a>
+                </li>
+            }
+
+            <li class="page-item @nextDisabled">
+                <a class="page-link" asp-page="./Index"
+                   asp-route-pageIndex="@(Model.Movies.PageIndex + 1)"
+                   asp-route-searchQuery="@Model.SearchQuery"
+                   asp-route-genreFilter="@Model.GenreFilter">
+                    Successiva <i class="bi bi-chevron-right"></i>
+                </a>
+            </li>
+        </ul>
+    </nav>
 </div>
 
 @section Styles {
     <style>
-        .movie-list-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-
         .movie-card {
-            transition: transform 0.2s, box-shadow 0.2s;
-            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             border-radius: 8px;
-            border: none;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
+            background-color: #fff;
         }
 
             .movie-card:hover {
-                transform: translateY(-5px);
-                box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+                transform: translateY(-8px);
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
             }
 
         .movie-poster {
             position: relative;
+            aspect-ratio: 2/3;
             overflow: hidden;
-            height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f0f0f0;
+            background-color: #eee;
         }
 
             .movie-poster img {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
+                transition: transform 0.3s;
             }
 
-        .no-poster {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #e9ecef;
-            color: #6c757d;
+        .movie-card:hover .movie-poster img {
+            transform: scale(1.05);
         }
 
-            .no-poster i {
-                font-size: 3rem;
-            }
-
+        /* Overlay per i dettagli al passaggio del mouse */
         .movie-overlay {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0,0,0,0.5);
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -173,36 +188,61 @@
             opacity: 1;
         }
 
-        .card-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            line-height: 1.3;
-            margin-bottom: 0.5rem;
-            height: 2.8rem;
-            overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-        }
-
-        .rating-badge {
+        .no-poster {
+            width: 100%;
+            height: 100%;
             display: flex;
             align-items: center;
-            gap: 0.25rem;
-            color: #333;
-            font-weight: 500;
+            justify-content: center;
+            background-color: #e5e5e5;
+        }
+
+            .no-poster i {
+                font-size: 3rem;
+                color: #999;
+            }
+
+        .movie-rating {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0,0,0,0.8);
+            color: #ffcc00;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .movie-info {
+            padding: 1rem;
+        }
+
+        .movie-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+            .movie-title a {
+                color: inherit;
+                text-decoration: none;
+            }
+
+        .movie-year {
+            color: #777;
+            font-size: 0.9rem;
         }
 
         .verified-badge {
-            color: #198754;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
+            color: #4caf50;
         }
 
-        .search-container {
-            width: 300px;
+        .pagination {
+            margin-top: 2rem;
         }
     </style>
 }

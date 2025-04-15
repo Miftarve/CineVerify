@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using CineVerify.Models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace CineVerify.Areas.Identity.Pages.Account
 {
@@ -83,16 +84,17 @@ namespace CineVerify.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-
             if (ModelState.IsValid)
             {
+                // Crea un nuovo utente con le informazioni fornite
                 var user = new ApplicationUser
                 {
                     UserName = Input.Email,
                     Email = Input.Email,
                     Nome = Input.Nome,
                     Cognome = Input.Cognome,
-                    DataRegistrazione = DateTime.UtcNow
+                    DataRegistrazione = DateTime.UtcNow,
+                    ProfilePictureUrl = "/images/default-avatar.png" // Imposta l'immagine di profilo predefinita
                 };
 
                 var result = await _userManager.CreateAsync(user, Input.Password);

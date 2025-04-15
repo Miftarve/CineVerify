@@ -437,6 +437,14 @@ else
             var modal = new bootstrap.Modal(document.getElementById('reviewModal'));
             modal.show();
         }
+                var history = new MovieWatchHistory
+        {
+            UserId = currentUser.Id,
+            MovieId = id,
+            WatchedAt = DateTime.UtcNow,
+            Completed = false // oppure true a seconda della tua logica
+        };
+        _context.MovieWatchHistory.Add(history);
     </script>
 }
 
